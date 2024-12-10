@@ -8,13 +8,13 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <zlib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include "inc/wows-depack.h"
+#include <stdbool.h>
+#include "inc/fliar.h"
 
 #if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(__CYGWIN__)
 #include <fcntl.h>
@@ -73,9 +73,8 @@ static struct argp argp = {options, parse_opt, args_doc, doc};
 int main(int argc, char **argv) {
     struct arguments *args = calloc(sizeof(struct arguments), 1);
     int ret = 0;
-    bool wopt = false;
     argp_parse(&argp, argc, argv, 0, 0, args);
 
     free(args);
-    return 0;
+    return ret;
 }

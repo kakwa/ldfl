@@ -91,6 +91,7 @@ if(BUILD_TESTS)
   if(CUNIT_LIBRARY)
 
     include(CTest)
+    include_directories(./lib)
     add_test(NAME fliar-test COMMAND fliar-test)
     add_executable(fliar-test tests/tests.c)
     target_link_libraries(fliar-test fliar ${PCRE_LIBRARY} ${CUNIT_LIBRARY})
