@@ -1,0 +1,24 @@
+{
+  "settings": {
+    "log_level": "debug",
+    "cache_first": true
+  },
+  "mapping": [
+    {
+      "name": "temporary redirect",
+      "type": "regex",
+      "search_pattern": ".*/temporary/\([^/]*\)$",
+      "replace_pattern": "/tmp/\1"
+    },
+    {
+      "name": "memory open",
+      "search_pattern": ".*/file[0-9].txt",
+      "type": "mem_open"
+    },
+    {
+      "search_pattern": ".*/static.bin",
+      "type": "static",
+      "target": "default_blob"
+    }
+  ]
+}
