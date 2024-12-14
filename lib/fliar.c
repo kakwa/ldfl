@@ -1,4 +1,6 @@
+#define _DEFAULT_SOURCE
 #define _POSIX_C_SOURCE 200809L
+#define _BSD_SOURCE
 #define _XOPEN_SOURCE 500
 
 #include <stdbool.h>
@@ -43,7 +45,7 @@ typedef struct {
 // Example default blob data
 static const unsigned char ldf_default_blob[] = "hello from ld-fliar";
 
-extern const ldfl_setting_t ldfl_setting;
+extern ldfl_setting_t ldfl_setting;
 
 // Default logger implementation (to stderr)
 void ldfl_stderr_logger(int priority, const char *fmt, ...) {
@@ -62,6 +64,7 @@ void ldfl_stderr_logger(int priority, const char *fmt, ...) {
             : (priority == LOG_INFO)    ? "INFO"
                                         : "DEBUG");
     vfprintf(stderr, fmt, args);
+    fprintf(stderr, "\n");
     va_end(args);
 }
 
@@ -70,6 +73,7 @@ void ldfl_syslog_logger(int priority, const char *fmt, ...) {
         return;
 
     // build the out log message
+    // TODO vsyslog
     FILE  *stream;
     char  *out;
     size_t len;

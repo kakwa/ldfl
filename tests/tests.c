@@ -46,19 +46,105 @@ void test_generate_header() {
     remove(output_file);
 }
 
+// Redirect stderr to a buffer for testing
+static char  stderr_buffer[1024];
+static FILE *stderr_stream;
+
+// Mock `syslog` call for validation
+static char syslog_buffer[1024];
+static int  syslog_priority;
+
+// Mock syslog implementation
+void syslog(int priority, const char *fmt, ...) {
+    syslog_priority = priority;
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(syslog_buffer, sizeof(syslog_buffer), fmt, args);
+    va_end(args);
+}
+
+// Setup function to redirect stderr
+static int setup_stderr_redirect(void) {
+    memset(stderr_buffer, 0, sizeof(stderr_buffer));
+    stderr_stream = fmemopen(stderr_buffer, sizeof(stderr_buffer), "w");
+    if (!stderr_stream) {
+        return -1;
+    }
+    stderr = stderr_stream; // Redirect stderr
+    return 0;
+}
+
+// Teardown function to restore stderr
+static int teardown_stderr_redirect(void) {
+    fclose(stderr_stream);
+    stderr = stderr; // Restore original stderr
+    return 0;
+}
+
+// Test ldfl_stderr_logger
+void test_ldfl_stderr_logger(void) {
+    // Set mock ldfl_setting
+    ldfl_setting.log_level = LOG_WARNING;
+
+    // Log a message below the level
+    ldfl_stderr_logger(LOG_DEBUG, "This should not appear.");
+    fflush(stderr_stream);
+    CU_ASSERT_STRING_EQUAL(stderr_buffer, ""); // No output expected
+
+    // Log a message at the level
+    ldfl_stderr_logger(LOG_WARNING, "This is a warning: %d", 42);
+    fflush(stderr_stream);
+    CU_ASSERT_STRING_EQUAL(stderr_buffer, "LOG_WARNING: This is a warning: 42\n");
+
+    // Log a message above the level
+    ldfl_stderr_logger(LOG_ERR, "This is an error!");
+    fflush(stderr_stream);
+    CU_ASSERT_STRING_EQUAL(stderr_buffer + strlen("LOG_WARNING: This is a warning: 42") + 1,
+                           "LOG_ERR: This is an error!\n");
+}
+
+// Test ldfl_syslog_logger
+void test_ldfl_syslog_logger(void) {
+    // Replace syslog with mock implementation
+    ldfl_setting.log_level = LOG_NOTICE;
+
+    // Log a message below the level
+    ldfl_syslog_logger(LOG_DEBUG, "Debug message");
+    CU_ASSERT_STRING_EQUAL(syslog_buffer, ""); // No output expected
+
+    // Log a message at the level
+    ldfl_syslog_logger(LOG_NOTICE, "Notice message: %d", 99);
+    CU_ASSERT_STRING_EQUAL(syslog_buffer, "Notice message: 99");
+    CU_ASSERT_EQUAL(syslog_priority, LOG_NOTICE);
+
+    // Log a message above the level
+    ldfl_syslog_logger(LOG_CRIT, "Critical error");
+    CU_ASSERT_STRING_EQUAL(syslog_buffer, "Critical error");
+    CU_ASSERT_EQUAL(syslog_priority, LOG_CRIT);
+}
+
 int main() {
     // Initialize CUnit test registry
     if (CUE_SUCCESS != CU_initialize_registry())
         return CU_get_error();
 
-    CU_pSuite suite = CU_add_suite("generate_header_test_suite", NULL, NULL);
+    CU_pSuite suite = CU_add_suite("general", NULL, NULL);
     if (!suite) {
         CU_cleanup_registry();
         return CU_get_error();
     }
 
+    // Add a suite for logger tests
+    CU_pSuite loggerSuite = CU_add_suite("Logger Tests", setup_stderr_redirect, teardown_stderr_redirect);
+    if (!loggerSuite) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+
     // Add the test to the suite
-    if (!CU_add_test(suite, "test_generate_header", test_generate_header)) {
+    if (!CU_add_test(loggerSuite, "loggers", test_ldfl_stderr_logger) ||
+        !CU_add_test(loggerSuite, "loggers", test_ldfl_syslog_logger) ||
+        !CU_add_test(suite, "general", test_generate_header)) {
         CU_cleanup_registry();
         return CU_get_error();
     }
