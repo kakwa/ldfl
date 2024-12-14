@@ -1,9 +1,13 @@
+#define _POSIX_C_SOURCE 200809L
+#define _XOPEN_SOURCE 500
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 #include <pcre.h>
 
 // Define bitmask flags for operation types using 64-bit values
@@ -28,24 +32,57 @@ typedef struct {
 } ldfl_mapping_t;
 
 // Variadic logger function type
-typedef void (*ldfl_logger_t)(const char *format, ...);
-
-// Default logger implementation (to stderr)
-void ldfl_stderr_logger(const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    vfprintf(stderr, format, args);
-    va_end(args);
-}
+typedef void (*ldfl_logger_t)(int priority, const char *fmt, ...);
 
 // Structure for settings
 typedef struct {
-    const char   *log_level; // Log level (e.g., "debug", "info")
+    int           log_level; // Log level (e.g., "debug", "info")
     ldfl_logger_t logger;    // Variadic logger function pointer
 } ldfl_setting_t;
 
 // Example default blob data
 static const unsigned char ldf_default_blob[] = "hello from ld-fliar";
+
+extern const ldfl_setting_t ldfl_setting;
+
+// Default logger implementation (to stderr)
+void ldfl_stderr_logger(int priority, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    if (priority > ldfl_setting.log_level)
+        return;
+
+    fprintf(stderr, "LOG_%s: ",
+            (priority == LOG_EMERG)     ? "EMER"
+            : (priority == LOG_ALERT)   ? "ALERT"
+            : (priority == LOG_CRIT)    ? "CRIT"
+            : (priority == LOG_ERR)     ? "ERR"
+            : (priority == LOG_WARNING) ? "WARNING"
+            : (priority == LOG_NOTICE)  ? "NOTICE"
+            : (priority == LOG_INFO)    ? "INFO"
+                                        : "DEBUG");
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+}
+
+void ldfl_syslog_logger(int priority, const char *fmt, ...) {
+    if (priority > ldfl_setting.log_level)
+        return;
+
+    // build the out log message
+    FILE  *stream;
+    char  *out;
+    size_t len;
+    stream = open_memstream(&out, &len);
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(stream, fmt, args);
+    va_end(args);
+    fflush(stream);
+    fclose(stream);
+    syslog(priority, "%s", out);
+    free(out);
+}
 
 // TODO remove
 #define FLIAR_STATIC_CONFIG

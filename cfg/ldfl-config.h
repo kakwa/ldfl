@@ -1,4 +1,4 @@
-static const ldfl_mapping_t ldfl_mapping[] = {
+const ldfl_mapping_t ldfl_mapping[] = {
     /* name                  search_pattern          operation         target                extra_options         */
     { "temporary redirect",  ".*/temp/\\([^/]*\\)$", LDFL_OP_MAP,      "/tmp/\\1",           NULL},
     { "executable redirect", ".*/.bin/\\([^/]*\\)$", LDFL_OP_EXEC_MAP, "/opt/fliar/bin/\\1", NULL},
@@ -9,8 +9,8 @@ static const ldfl_mapping_t ldfl_mapping[] = {
     { NULL,                  NULL,                   LDFL_OP_END,      NULL,                 NULL} // keep this last value
 };
 
-static const ldfl_setting_t ldfl_setting = {
-    .log_level   = "debug",
+const ldfl_setting_t ldfl_setting = {
+    .log_level   = LOG_DEBUG,
     .logger      = ldfl_stderr_logger,
 };
 
