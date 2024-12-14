@@ -1,9 +1,13 @@
+#define _POSIX_C_SOURCE 200809L
+#define _XOPEN_SOURCE 500
+
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "fliar-priv.h" // Include the header containing the generate_header function declaration.
+#include "fliar.c" // Include the header containing the generate_header function declaration.
+#include "embedder.c"
 
 void test_generate_header() {
     const char *input_file  = "test_input.bin";
