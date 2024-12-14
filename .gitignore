@@ -59,3 +59,4 @@ Makefile
 cmake_install.cmake
 fliar-cli
 fliar-test
+Testing/
