@@ -25,7 +25,7 @@ void generate_header(const char *input_file, const char *output_file, const char
 
     fprintf(out, "const unsigned char %s[%ld] = {\n", var_name, file_size);
 
-    int byte;
+    int    byte;
     size_t count = 0;
     while ((byte = fgetc(in)) != EOF) {
         fprintf(out, "0x%02X,", (unsigned char)byte);

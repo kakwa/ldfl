@@ -44,7 +44,7 @@ struct arguments {
     char *args[2]; /* arg1 & arg2 */
     char *output;
     char *input;
-    bool debug;
+    bool  debug;
 };
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
@@ -72,7 +72,7 @@ static struct argp argp = {options, parse_opt, args_doc, doc};
 
 int main(int argc, char **argv) {
     struct arguments *args = calloc(sizeof(struct arguments), 1);
-    int ret = 0;
+    int               ret  = 0;
     argp_parse(&argp, argc, argv, 0, 0, args);
 
     free(args);

@@ -6,9 +6,9 @@
 #include "fliar-priv.h" // Include the header containing the generate_header function declaration.
 
 void test_generate_header() {
-    const char *input_file = "test_input.bin";
+    const char *input_file  = "test_input.bin";
     const char *output_file = "test_output.h";
-    const char *var_name = "test_var";
+    const char *var_name    = "test_var";
 
     // Create a test binary file
     FILE *in = fopen(input_file, "wb");
@@ -26,7 +26,7 @@ void test_generate_header() {
     CU_ASSERT_PTR_NOT_NULL_FATAL(out);
 
     char buffer[256];
-    int contains_variable = 0;
+    int  contains_variable = 0;
     while (fgets(buffer, sizeof(buffer), out)) {
         if (strstr(buffer, "const unsigned char test_var[4] = {")) {
             contains_variable = 1;

@@ -1,11 +1,45 @@
 #!/bin/sh
 
-cd `dirname $0`/../
+# Navigate to the script's directory
+cd "$(dirname "$0")/../" || exit 1
 
-# format code
-find ./ -type f \( -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.hpp" \) ! -path "./CMakeFiles/*" ! -path '*/ldfl-config.h' \
-    -exec clang-format -style="{BasedOnStyle: llvm, IndentWidth: 4, AllowShortFunctionsOnASingleLine: None, SortIncludes: false, KeepEmptyLinesAtTheStartOfBlocks: false, ColumnLimit: 120}" -i {} \;
+# Define clang-format style options
+CLANG_FORMAT_STYLE="{
+    BasedOnStyle: llvm,
+    IndentWidth: 4,
+    AllowShortFunctionsOnASingleLine: None,
+    SortIncludes: false,
+    KeepEmptyLinesAtTheStartOfBlocks: false,
+    ColumnLimit: 120,
+    AlignConsecutiveAssignments: true,
+    AlignConsecutiveDeclarations: true,
+    AlignTrailingComments: true,
+    BreakBeforeBraces: Attach
+}"
 
+# Format C/C++ code files
+find ./ -type f \
+    \( -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.hpp" \) \
+    ! -path "./CMakeFiles/*" \
+    ! -path "*/ldfl-config.h" \
+    -exec clang-format -style="$CLANG_FORMAT_STYLE" -i {} \;
 
-# Format CMake
+# Define cmake-format style options
+CMAKE_FORMAT_STYLE="{
+    tab_size: 4,
+    use_tabchars: false,
+    max_line_length: 120,
+    keyword_case: lower,
+    align_items: true,
+    line_ending: unix,
+    dangle_parens: true
+}"
+
+# Export cmake-format options
+export CMAKE_FORMAT_STYLE
+
+# Format CMake files
 cmake-format -i CMakeLists.txt cmake/*
+
+# Print success message
+echo "Formatting completed successfully."
