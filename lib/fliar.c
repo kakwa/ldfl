@@ -107,6 +107,9 @@ void ldfl_syslog_logger(int priority, const char *fmt, ...) {
 #include "../cfg/ldfl-config.h"
 #endif
 
+
+#ifndef LDLF_UTILS_TESTING
+
 #define REAL(f)                                                                                                        \
     real_##f = dlsym(RTLD_NEXT, #f);                                                                                   \
     assert(real_##f != NULL)
@@ -116,6 +119,7 @@ void ldfl_syslog_logger(int priority, const char *fmt, ...) {
         ldfl_setting.logger(LOG_DEBUG, "ld-fliar init did not run, re-init");                                          \
         ldfl_init();                                                                                                   \
     };
+
 
 bool ldfl_is_init;
 int (*real_openat)(int dirfd, const char *pathname, int flags, mode_t mode);
@@ -127,10 +131,6 @@ int (*real_openat64)(int dirfd, const char *pathname, int flags, mode_t mode);
 int (*real_rename)(const char *oldpath, const char *newpath);
 int (*real_renameat2)(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, unsigned int flags);
 int (*real_renameat)(int olddirfd, const char *oldpath, int newdirfd, const char *newpath);
-#if defined(__APPLE__)
-int (*real_renamex_np)(const char *oldpath, const char *newpath, int flags);
-int (*real_renameatx_np)(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags);
-#endif
 int (*real_unlink)(const char *pathname);
 int (*real_unlinkat)(int dirfd, const char *pathname, int flags);
 int (*real_futimes)(int fd, const struct timeval times[2]);
@@ -150,6 +150,11 @@ int (*real_execlp)(const char *file, const char *arg, ...);
 int (*real_execv)(const char *path, char *const argv[]);
 int (*real_execvp)(const char *file, char *const argv[]);
 int (*real_glob)(const char *pattern, int flags, int (*errfunc)(const char *, int), glob_t *pglob);
+#if defined(__APPLE__)
+int (*real_renamex_np)(const char *oldpath, const char *newpath, int flags);
+int (*real_renameatx_np)(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags);
+#endif
+
 
 static void __attribute__((constructor(101))) ldfl_init() {
     ldfl_setting.logger(LOG_DEBUG, "ld-fliar init called");
@@ -385,4 +390,5 @@ int renameatx_np(int olddirfd, const char *oldpath, int newdirfd, const char *ne
     RINIT;
     return real_renameatx_np(olddirfd, oldpath, newdirfd, newpath, flags);
 }
+#endif
 #endif
