@@ -15,8 +15,11 @@
 #include <dlfcn.h>
 #include <assert.h>
 #include <sys/stat.h>
+#include <dirent.h>
+#include <dirent.h>
 #include <sys/time.h>
 #include <unistd.h>
+
 #include <glob.h>
 
 // Define bitmask flags for operation types using 64-bit values
@@ -108,7 +111,6 @@ void ldfl_syslog_logger(int priority, const char *fmt, ...) {
 #include "../cfg/ldfl-config.h"
 #endif
 
-
 #ifndef LDLF_UTILS_TESTING
 
 #define REAL(f)                                                                                                        \
@@ -120,7 +122,6 @@ void ldfl_syslog_logger(int priority, const char *fmt, ...) {
         ldfl_setting.logger(LOG_DEBUG, "ld-fliar init did not run, re-init");                                          \
         ldfl_init();                                                                                                   \
     };
-
 
 bool ldfl_is_init;
 int (*real_openat)(int dirfd, const char *pathname, int flags, mode_t mode);
@@ -151,11 +152,33 @@ int (*real_execlp)(const char *file, const char *arg, ...);
 int (*real_execv)(const char *path, char *const argv[]);
 int (*real_execvp)(const char *file, char *const argv[]);
 int (*real_glob)(const char *pattern, int flags, int (*errfunc)(const char *, int), glob_t *pglob);
+DIR *(*real_opendir)(const char *name);
+DIR *(*real_fdopendir)(int fd);
+int (*real_mkdir)(const char *pathname, mode_t mode);
+int (*real_mkdirat)(int dirfd, const char *pathname, mode_t mode);
+int (*real_rmdir)(const char *pathname);
+int (*real_chdir)(const char *path);
+int (*real_fchdir)(int fd);
+int (*real_symlink)(const char *target, const char *linkpath);
+ssize_t (*real_readlink)(const char *pathname, char *buf, size_t bufsiz);
+int (*real_link)(const char *oldpath, const char *newpath);
+int (*real_linkat)(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags);
+int (*real_chmod)(const char *path, mode_t mode);
+int (*real_fchmod)(int fd, mode_t mode);
+int (*real_truncate)(const char *path, off_t length);
+int (*real_ftruncate)(int fd, off_t length);
+int (*real_faccessat)(int dirfd, const char *pathname, int mode, int flags);
+off_t (*real_lseek)(int fd, off_t offset, int whence);
+int (*real_stat)(const char *pathname, struct stat *statbuf);
+int (*real_lstat)(const char *pathname, struct stat *statbuf);
+int (*real_fstat)(int fd, struct stat *statbuf);
+char *(*real_getcwd)(char *buf, size_t size);
+FILE *(*real_tmpfile)(void);
+
 #if defined(__APPLE__)
 int (*real_renamex_np)(const char *oldpath, const char *newpath, int flags);
 int (*real_renameatx_np)(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags);
 #endif
-
 
 static void __attribute__((constructor(101))) ldfl_init() {
     ldfl_setting.logger(LOG_DEBUG, "ld-fliar init called");
@@ -187,6 +210,28 @@ static void __attribute__((constructor(101))) ldfl_init() {
     REAL(execv);
     REAL(execvp);
     REAL(glob);
+    REAL(opendir);
+    REAL(fdopendir);
+    REAL(mkdir);
+    REAL(mkdirat);
+    REAL(rmdir);
+    REAL(chdir);
+    REAL(fchdir);
+    REAL(symlink);
+    REAL(readlink);
+    REAL(link);
+    REAL(linkat);
+    REAL(chmod);
+    REAL(fchmod);
+    REAL(truncate);
+    REAL(ftruncate);
+    REAL(faccessat);
+    REAL(lseek);
+    REAL(stat);
+    REAL(lstat);
+    REAL(fstat);
+    REAL(getcwd);
+    REAL(tmpfile);
 
 #if defined(__APPLE__)
     REAL(renamex_np);
@@ -376,6 +421,140 @@ int execvp(const char *file, char *const argv[]) {
     ldfl_setting.logger(LOG_DEBUG, "execvp called: file=%s, argv=%p", file, argv);
     RINIT;
     return real_execvp(file, argv);
+}
+
+DIR *opendir(const char *name) {
+    ldfl_setting.logger(LOG_DEBUG, "opendir called: name=%s", name);
+    RINIT;
+    return real_opendir(name);
+}
+
+DIR *fdopendir(int fd) {
+    ldfl_setting.logger(LOG_DEBUG, "fdopendir called: fd=%d", fd);
+    RINIT;
+    return real_fdopendir(fd);
+}
+
+int mkdir(const char *pathname, mode_t mode) {
+    ldfl_setting.logger(LOG_DEBUG, "mkdir called: pathname=%s, mode=%o", pathname, mode);
+    RINIT;
+    return real_mkdir(pathname, mode);
+}
+
+int mkdirat(int dirfd, const char *pathname, mode_t mode) {
+    ldfl_setting.logger(LOG_DEBUG, "mkdirat called: dirfd=%d, pathname=%s, mode=%o", dirfd, pathname, mode);
+    RINIT;
+    return real_mkdirat(dirfd, pathname, mode);
+}
+
+int rmdir(const char *pathname) {
+    ldfl_setting.logger(LOG_DEBUG, "rmdir called: pathname=%s", pathname);
+    RINIT;
+    return real_rmdir(pathname);
+}
+
+int chdir(const char *path) {
+    ldfl_setting.logger(LOG_DEBUG, "chdir called: path=%s", path);
+    RINIT;
+    return real_chdir(path);
+}
+
+int fchdir(int fd) {
+    ldfl_setting.logger(LOG_DEBUG, "fchdir called: fd=%d", fd);
+    RINIT;
+    return real_fchdir(fd);
+}
+
+int symlink(const char *target, const char *linkpath) {
+    ldfl_setting.logger(LOG_DEBUG, "symlink called: target=%s, linkpath=%s", target, linkpath);
+    RINIT;
+    return real_symlink(target, linkpath);
+}
+
+ssize_t readlink(const char *pathname, char *buf, size_t bufsiz) {
+    ldfl_setting.logger(LOG_DEBUG, "readlink called: pathname=%s, bufsiz=%zu", pathname, bufsiz);
+    RINIT;
+    return real_readlink(pathname, buf, bufsiz);
+}
+
+int link(const char *oldpath, const char *newpath) {
+    ldfl_setting.logger(LOG_DEBUG, "link called: oldpath=%s, newpath=%s", oldpath, newpath);
+    RINIT;
+    return real_link(oldpath, newpath);
+}
+
+int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags) {
+    ldfl_setting.logger(LOG_DEBUG, "linkat called: olddirfd=%d, oldpath=%s, newdirfd=%d, newpath=%s, flags=%d",
+                        olddirfd, oldpath, newdirfd, newpath, flags);
+    RINIT;
+    return real_linkat(olddirfd, oldpath, newdirfd, newpath, flags);
+}
+
+int chmod(const char *path, mode_t mode) {
+    ldfl_setting.logger(LOG_DEBUG, "chmod called: path=%s, mode=%o", path, mode);
+    RINIT;
+    return real_chmod(path, mode);
+}
+
+int fchmod(int fd, mode_t mode) {
+    ldfl_setting.logger(LOG_DEBUG, "fchmod called: fd=%d, mode=%o", fd, mode);
+    RINIT;
+    return real_fchmod(fd, mode);
+}
+
+int truncate(const char *path, off_t length) {
+    ldfl_setting.logger(LOG_DEBUG, "truncate called: path=%s, length=%ld", path, length);
+    RINIT;
+    return real_truncate(path, length);
+}
+
+int ftruncate(int fd, off_t length) {
+    ldfl_setting.logger(LOG_DEBUG, "ftruncate called: fd=%d, length=%ld", fd, length);
+    RINIT;
+    return real_ftruncate(fd, length);
+}
+
+int faccessat(int dirfd, const char *pathname, int mode, int flags) {
+    ldfl_setting.logger(LOG_DEBUG, "faccessat called: dirfd=%d, pathname=%s, mode=%d, flags=%d", dirfd, pathname, mode,
+                        flags);
+    RINIT;
+    return real_faccessat(dirfd, pathname, mode, flags);
+}
+
+off_t lseek(int fd, off_t offset, int whence) {
+    ldfl_setting.logger(LOG_DEBUG, "lseek called: fd=%d, offset=%ld, whence=%d", fd, offset, whence);
+    RINIT;
+    return real_lseek(fd, offset, whence);
+}
+
+int stat(const char *pathname, struct stat *statbuf) {
+    ldfl_setting.logger(LOG_DEBUG, "stat called: pathname=%s", pathname);
+    RINIT;
+    return real_stat(pathname, statbuf);
+}
+
+int lstat(const char *pathname, struct stat *statbuf) {
+    ldfl_setting.logger(LOG_DEBUG, "lstat called: pathname=%s", pathname);
+    RINIT;
+    return real_lstat(pathname, statbuf);
+}
+
+int fstat(int fd, struct stat *statbuf) {
+    ldfl_setting.logger(LOG_DEBUG, "fstat called: fd=%d", fd);
+    RINIT;
+    return real_fstat(fd, statbuf);
+}
+
+char *getcwd(char *buf, size_t size) {
+    ldfl_setting.logger(LOG_DEBUG, "getcwd called: size=%zu", size);
+    RINIT;
+    return real_getcwd(buf, size);
+}
+
+FILE *tmpfile(void) {
+    ldfl_setting.logger(LOG_DEBUG, "tmpfile called");
+    RINIT;
+    return real_tmpfile();
 }
 
 #if defined(__APPLE__)

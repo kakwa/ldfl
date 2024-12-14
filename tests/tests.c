@@ -1,6 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #define _XOPEN_SOURCE 500
-#define  LDLF_UTILS_TESTING
+#define LDLF_UTILS_TESTING
 
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
