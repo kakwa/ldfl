@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <glob.h>
 
 // Define bitmask flags for operation types using 64-bit values
 typedef enum {
@@ -107,7 +108,7 @@ void ldfl_syslog_logger(int priority, const char *fmt, ...) {
 #endif
 
 #define REAL(f)                                                                                                        \
-    real_##f = dlsym(RTLD_NEXT, "##f");                                                                                \
+    real_##f = dlsym(RTLD_NEXT, #f);                                                                                   \
     assert(real_##f != NULL)
 
 int (*real_openat)(int dirfd, const char *pathname, int flags, mode_t mode);
@@ -117,10 +118,12 @@ int (*real_open)(const char *pathname, int flags, mode_t mode);
 int (*real_open64)(const char *pathname, int flags, mode_t mode);
 int (*real_openat64)(int dirfd, const char *pathname, int flags, mode_t mode);
 int (*real_rename)(const char *oldpath, const char *newpath);
-int (*real_renamex_np)(const char *oldpath, const char *newpath, int flags);
 int (*real_renameat2)(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, unsigned int flags);
 int (*real_renameat)(int olddirfd, const char *oldpath, int newdirfd, const char *newpath);
+#if defined(__APPLE__)
+int (*real_renamex_np)(const char *oldpath, const char *newpath, int flags);
 int (*real_renameatx_np)(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags);
+#endif
 int (*real_unlink)(const char *pathname);
 int (*real_unlinkat)(int dirfd, const char *pathname, int flags);
 int (*real_futimes)(int fd, const struct timeval times[2]);
@@ -129,7 +132,7 @@ int (*real_access)(const char *pathname, int mode);
 int (*real_fstatat)(int dirfd, const char *pathname, struct stat *statbuf, int flags);
 int (*real___fxstat)(int version, int fd, struct stat *statbuf);
 int (*real___xstat)(int version, const char *filename, struct stat *statbuf);
-int (*real___xlstat)(int version, const char *filename, struct stat *statbuf);
+int (*real___xstat64)(int version, const char *filename, struct stat *statbuf);
 int (*real___lxstat)(int version, const char *filename, struct stat *statbuf);
 int (*real___fxstatat)(int version, int dirfd, const char *pathname, struct stat *statbuf, int flags);
 int (*real_utimensat)(int dirfd, const char *pathname, const struct timespec times[2], int flags);
@@ -139,6 +142,7 @@ int (*real_execl)(const char *path, const char *arg, ...);
 int (*real_execlp)(const char *file, const char *arg, ...);
 int (*real_execv)(const char *path, char *const argv[]);
 int (*real_execvp)(const char *file, char *const argv[]);
+int (*real_glob)(const char *pattern, int flags, int (*errfunc)(const char *, int), glob_t *pglob);
 
 __attribute__((constructor)) void init() {
     REAL(openat);
@@ -148,10 +152,8 @@ __attribute__((constructor)) void init() {
     REAL(open64);
     REAL(openat64);
     REAL(rename);
-    REAL(renamex_np);
     REAL(renameat2);
     REAL(renameat);
-    REAL(renameatx_np);
     REAL(unlink);
     REAL(unlinkat);
     REAL(futimes);
@@ -160,7 +162,7 @@ __attribute__((constructor)) void init() {
     REAL(fstatat);
     REAL(__fxstat);
     REAL(__xstat);
-    REAL(__xlstat);
+    REAL(__xstat64);
     REAL(__lxstat);
     REAL(__fxstatat);
     REAL(utimensat);
@@ -170,6 +172,12 @@ __attribute__((constructor)) void init() {
     REAL(execlp);
     REAL(execv);
     REAL(execvp);
+    REAL(glob);
+
+#if defined(__APPLE__)
+    REAL(renamex_np);
+    REAL(renameatx_np);
+#endif
 }
 
 int openat(int dirfd, const char *pathname, int flags, mode_t mode) {
@@ -209,11 +217,6 @@ int rename(const char *oldpath, const char *newpath) {
     return real_rename(oldpath, newpath);
 }
 
-int renamex_np(const char *oldpath, const char *newpath, int flags) {
-    ldfl_setting.logger(LOG_DEBUG, "renamex_np called: oldpath=%s, newpath=%s, flags=%d", oldpath, newpath, flags);
-    return real_renamex_np(oldpath, newpath, flags);
-}
-
 int renameat2(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, unsigned int flags) {
     REAL(renameat2);
     ldfl_setting.logger(LOG_DEBUG, "renameat2 called: olddirfd=%d, oldpath=%s, newdirfd=%d, newpath=%s, flags=%u",
@@ -225,12 +228,6 @@ int renameat(int olddirfd, const char *oldpath, int newdirfd, const char *newpat
     ldfl_setting.logger(LOG_DEBUG, "renameat called: olddirfd=%d, oldpath=%s, newdirfd=%d, newpath=%s", olddirfd,
                         oldpath, newdirfd, newpath);
     return real_renameat(olddirfd, oldpath, newdirfd, newpath);
-}
-
-int renameatx_np(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags) {
-    ldfl_setting.logger(LOG_DEBUG, "renameatx_np called: olddirfd=%d, oldpath=%s, newdirfd=%d, newpath=%s, flags=%d",
-                        olddirfd, oldpath, newdirfd, newpath, flags);
-    return real_renameatx_np(olddirfd, oldpath, newdirfd, newpath, flags);
 }
 
 int unlink(const char *pathname) {
@@ -274,9 +271,9 @@ int __xstat(int version, const char *filename, struct stat *statbuf) {
     return real___xstat(version, filename, statbuf);
 }
 
-int __xlstat(int version, const char *filename, struct stat *statbuf) {
-    ldfl_setting.logger(LOG_DEBUG, "__xlstat called: version=%d, filename=%s", version, filename);
-    return real___xlstat(version, filename, statbuf);
+int __xstat64(int version, const char *filename, struct stat *statbuf) {
+    ldfl_setting.logger(LOG_DEBUG, "__xstat64 called: version=%d, filename=%s", version, filename);
+    return real___xstat64(version, filename, statbuf);
 }
 
 int __lxstat(int version, const char *filename, struct stat *statbuf) {
@@ -337,3 +334,16 @@ int execvp(const char *file, char *const argv[]) {
     ldfl_setting.logger(LOG_DEBUG, "execvp called: file=%s, argv=%p", file, argv);
     return real_execvp(file, argv);
 }
+
+#if defined(__APPLE__)
+int renamex_np(const char *oldpath, const char *newpath, int flags) {
+    ldfl_setting.logger(LOG_DEBUG, "renamex_np called: oldpath=%s, newpath=%s, flags=%d", oldpath, newpath, flags);
+    return real_renamex_np(oldpath, newpath, flags);
+}
+
+int renameatx_np(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags) {
+    ldfl_setting.logger(LOG_DEBUG, "renameatx_np called: olddirfd=%d, oldpath=%s, newdirfd=%d, newpath=%s, flags=%d",
+                        olddirfd, oldpath, newdirfd, newpath, flags);
+    return real_renameatx_np(olddirfd, oldpath, newdirfd, newpath, flags);
+}
+#endif
