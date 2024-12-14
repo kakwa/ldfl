@@ -140,52 +140,76 @@ int (*real_execlp)(const char *file, const char *arg, ...);
 int (*real_execv)(const char *path, char *const argv[]);
 int (*real_execvp)(const char *file, char *const argv[]);
 
-int openat(int dirfd, const char *pathname, int flags, mode_t mode) {
+__attribute__((constructor)) void init() {
     REAL(openat);
+    REAL(fopen);
+    REAL(fopen64);
+    REAL(open);
+    REAL(open64);
+    REAL(openat64);
+    REAL(rename);
+    REAL(renamex_np);
+    REAL(renameat2);
+    REAL(renameat);
+    REAL(renameatx_np);
+    REAL(unlink);
+    REAL(unlinkat);
+    REAL(futimes);
+    REAL(utimes);
+    REAL(access);
+    REAL(fstatat);
+    REAL(__fxstat);
+    REAL(__xstat);
+    REAL(__xlstat);
+    REAL(__lxstat);
+    REAL(__fxstatat);
+    REAL(utimensat);
+    REAL(futimens);
+    REAL(execve);
+    REAL(execl);
+    REAL(execlp);
+    REAL(execv);
+    REAL(execvp);
+}
+
+int openat(int dirfd, const char *pathname, int flags, mode_t mode) {
     ldfl_setting.logger(LOG_DEBUG, "openat called: dirfd=%d, pathname=%s, flags=%d, mode=%o", dirfd, pathname, flags,
                         mode);
     return real_openat(dirfd, pathname, flags, mode);
 }
 
 FILE *fopen(const char *filename, const char *mode) {
-    REAL(fopen);
     ldfl_setting.logger(LOG_DEBUG, "fopen called: filename=%s, mode=%s", filename, mode);
     return real_fopen(filename, mode);
 }
 
 FILE *fopen64(const char *filename, const char *mode) {
-    REAL(fopen64);
     ldfl_setting.logger(LOG_DEBUG, "fopen64 called: filename=%s, mode=%s", filename, mode);
     return real_fopen64(filename, mode);
 }
 
 int open(const char *pathname, int flags, mode_t mode) {
-    REAL(open);
     ldfl_setting.logger(LOG_DEBUG, "open called: pathname=%s, flags=%d, mode=%o", pathname, flags, mode);
     return real_open(pathname, flags, mode);
 }
 
 int open64(const char *pathname, int flags, mode_t mode) {
-    REAL(open64);
     ldfl_setting.logger(LOG_DEBUG, "open64 called: pathname=%s, flags=%d, mode=%o", pathname, flags, mode);
     return real_open64(pathname, flags, mode);
 }
 
 int openat64(int dirfd, const char *pathname, int flags, mode_t mode) {
-    REAL(openat64);
     ldfl_setting.logger(LOG_DEBUG, "openat64 called: dirfd=%d, pathname=%s, flags=%d, mode=%o", dirfd, pathname, flags,
                         mode);
     return real_openat64(dirfd, pathname, flags, mode);
 }
 
 int rename(const char *oldpath, const char *newpath) {
-    REAL(rename);
     ldfl_setting.logger(LOG_DEBUG, "rename called: oldpath=%s, newpath=%s", oldpath, newpath);
     return real_rename(oldpath, newpath);
 }
 
 int renamex_np(const char *oldpath, const char *newpath, int flags) {
-    REAL(renamex_np);
     ldfl_setting.logger(LOG_DEBUG, "renamex_np called: oldpath=%s, newpath=%s, flags=%d", oldpath, newpath, flags);
     return real_renamex_np(oldpath, newpath, flags);
 }
@@ -198,109 +222,92 @@ int renameat2(int olddirfd, const char *oldpath, int newdirfd, const char *newpa
 }
 
 int renameat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath) {
-    REAL(renameat);
     ldfl_setting.logger(LOG_DEBUG, "renameat called: olddirfd=%d, oldpath=%s, newdirfd=%d, newpath=%s", olddirfd,
                         oldpath, newdirfd, newpath);
     return real_renameat(olddirfd, oldpath, newdirfd, newpath);
 }
 
 int renameatx_np(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags) {
-    REAL(renameatx_np);
     ldfl_setting.logger(LOG_DEBUG, "renameatx_np called: olddirfd=%d, oldpath=%s, newdirfd=%d, newpath=%s, flags=%d",
                         olddirfd, oldpath, newdirfd, newpath, flags);
     return real_renameatx_np(olddirfd, oldpath, newdirfd, newpath, flags);
 }
 
 int unlink(const char *pathname) {
-    REAL(unlink);
     ldfl_setting.logger(LOG_DEBUG, "unlink called: pathname=%s", pathname);
     return real_unlink(pathname);
 }
 
 int unlinkat(int dirfd, const char *pathname, int flags) {
-    REAL(unlinkat);
     ldfl_setting.logger(LOG_DEBUG, "unlinkat called: dirfd=%d, pathname=%s, flags=%d", dirfd, pathname, flags);
     return real_unlinkat(dirfd, pathname, flags);
 }
 
 int futimes(int fd, const struct timeval times[2]) {
-    REAL(futimes);
     ldfl_setting.logger(LOG_DEBUG, "futimes called: fd=%d, times=[%ld, %ld]", fd, times[0].tv_sec, times[1].tv_sec);
     return real_futimes(fd, times);
 }
 
 int utimes(const char *filename, const struct timeval times[2]) {
-    REAL(utimes);
     ldfl_setting.logger(LOG_DEBUG, "utimes called: filename=%s, times=[%ld, %ld]", filename, times[0].tv_sec,
                         times[1].tv_sec);
     return real_utimes(filename, times);
 }
 
 int access(const char *pathname, int mode) {
-    REAL(access);
     ldfl_setting.logger(LOG_DEBUG, "access called: pathname=%s, mode=%d", pathname, mode);
     return real_access(pathname, mode);
 }
 
 int fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags) {
-    REAL(fstatat);
     ldfl_setting.logger(LOG_DEBUG, "fstatat called: dirfd=%d, pathname=%s, flags=%d", dirfd, pathname, flags);
     return real_fstatat(dirfd, pathname, statbuf, flags);
 }
 
 int __fxstat(int version, int fd, struct stat *statbuf) {
-    REAL(__fxstat);
     ldfl_setting.logger(LOG_DEBUG, "__fxstat called: version=%d, fd=%d", version, fd);
     return real___fxstat(version, fd, statbuf);
 }
 
 int __xstat(int version, const char *filename, struct stat *statbuf) {
-    REAL(__xstat);
     ldfl_setting.logger(LOG_DEBUG, "__xstat called: version=%d, filename=%s", version, filename);
     return real___xstat(version, filename, statbuf);
 }
 
 int __xlstat(int version, const char *filename, struct stat *statbuf) {
-    REAL(__xlstat);
     ldfl_setting.logger(LOG_DEBUG, "__xlstat called: version=%d, filename=%s", version, filename);
     return real___xlstat(version, filename, statbuf);
 }
 
 int __lxstat(int version, const char *filename, struct stat *statbuf) {
-    REAL(__lxstat);
     ldfl_setting.logger(LOG_DEBUG, "__lxstat called: version=%d, filename=%s", version, filename);
     return real___lxstat(version, filename, statbuf);
 }
 
 int __fxstatat(int version, int dirfd, const char *pathname, struct stat *statbuf, int flags) {
-    REAL(__fxstatat);
     ldfl_setting.logger(LOG_DEBUG, "__fxstatat called: version=%d, dirfd=%d, pathname=%s, flags=%d", version, dirfd,
                         pathname, flags);
     return real___fxstatat(version, dirfd, pathname, statbuf, flags);
 }
 
 int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags) {
-    REAL(utimensat);
     ldfl_setting.logger(LOG_DEBUG, "utimensat called: dirfd=%d, pathname=%s, times=[%ld, %ld], flags=%d", dirfd,
                         pathname, times[0].tv_sec, times[1].tv_sec, flags);
     return real_utimensat(dirfd, pathname, times, flags);
 }
 
 int futimens(int fd, const struct timespec times[2]) {
-    REAL(futimens);
     ldfl_setting.logger(LOG_DEBUG, "futimens called: fd=%d, times=[%ld, %ld]", fd, times[0].tv_sec, times[1].tv_sec);
     return real_futimens(fd, times);
 }
 
 int execve(const char *filename, char *const argv[], char *const envp[]) {
-    REAL(execve);
     ldfl_setting.logger(LOG_DEBUG, "execve called: filename=%s, argv=%p, envp=%p", filename, argv, envp);
     return real_execve(filename, argv, envp);
 }
 
 // Wrapper function for execl with logging
 int execl(const char *path, const char *arg, ...) {
-    REAL(execl);
     va_list args;
     va_start(args, arg);
     ldfl_setting.logger(LOG_DEBUG, "execl called: path=%s, arg=%s", path, arg);
@@ -311,7 +318,6 @@ int execl(const char *path, const char *arg, ...) {
 
 // Wrapper function for execlp with logging
 int execlp(const char *file, const char *arg, ...) {
-    REAL(execlp);
     va_list args;
     va_start(args, arg);
     ldfl_setting.logger(LOG_DEBUG, "execlp called: file=%s, arg=%s", file, arg);
@@ -322,14 +328,12 @@ int execlp(const char *file, const char *arg, ...) {
 
 // Wrapper function for execv with logging
 int execv(const char *path, char *const argv[]) {
-    REAL(execv);
     ldfl_setting.logger(LOG_DEBUG, "execv called: path=%s, argv=%p", path, argv);
     return real_execv(path, argv);
 }
 
 // Wrapper function for execvp with logging
 int execvp(const char *file, char *const argv[]) {
-    REAL(execvp);
     ldfl_setting.logger(LOG_DEBUG, "execvp called: file=%s, argv=%p", file, argv);
     return real_execvp(file, argv);
 }
