@@ -11,7 +11,7 @@ ldfl_mapping_t ldfl_mapping[] = {
 
 ldfl_setting_t ldfl_setting = {
     .log_level   = LOG_DEBUG,
-    .logger      = ldfl_stderr_logger,
+    .logger      = ldfl_syslog_logger,
 };
 
 /* ADDITIONAL BLOBS */
