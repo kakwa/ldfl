@@ -124,28 +124,65 @@ void test_ldfl_syslog_logger(void) {
     CU_ASSERT_EQUAL(syslog_priority, LOG_CRIT);
 }
 
+// Test cases for argv/envp renderer
+void test_ldfl_render_nullable_array_valid() {
+    char *list[] = {"arg1", "arg2", "arg3", NULL};
+    char *result = ldfl_render_nullable_array(list);
+    CU_ASSERT_PTR_NOT_NULL(result);
+    CU_ASSERT_STRING_EQUAL(result, "[\"arg1\", \"arg2\", \"arg3\"]");
+    free(result);
+}
+
+void test_ldfl_render_nullable_array_empty() {
+    char *list[] = {NULL};
+    char *result = ldfl_render_nullable_array(list);
+    CU_ASSERT_PTR_NOT_NULL(result);
+    CU_ASSERT_STRING_EQUAL(result, "[]");
+    free(result);
+}
+
+void test_ldfl_render_nullable_array_null() {
+    char **list   = NULL; // Passing a NULL pointer
+    char  *result = ldfl_render_nullable_array(list);
+    CU_ASSERT_PTR_NOT_NULL(result);
+    CU_ASSERT_STRING_EQUAL(result, "[]");
+    free(result);
+}
+
+void test_ldfl_render_nullable_array_single_element() {
+    char *list[] = {"only_one", NULL};
+    char *result = ldfl_render_nullable_array(list);
+    CU_ASSERT_PTR_NOT_NULL(result);
+    CU_ASSERT_STRING_EQUAL(result, "[\"only_one\"]");
+    free(result);
+}
+
 int main() {
     // Initialize CUnit test registry
     if (CUE_SUCCESS != CU_initialize_registry())
         return CU_get_error();
 
-    CU_pSuite suite = CU_add_suite("general", NULL, NULL);
+    CU_pSuite suite = CU_add_suite("General", NULL, NULL);
     if (!suite) {
         CU_cleanup_registry();
         return CU_get_error();
     }
 
     // Add a suite for logger tests
-    CU_pSuite loggerSuite = CU_add_suite("Logger Tests", setup_stderr_redirect, teardown_stderr_redirect);
+    CU_pSuite loggerSuite = CU_add_suite("Logger", setup_stderr_redirect, teardown_stderr_redirect);
     if (!loggerSuite) {
         CU_cleanup_registry();
         return CU_get_error();
     }
 
     // Add the test to the suite
-    if (!CU_add_test(loggerSuite, "loggers", test_ldfl_stderr_logger) ||
-        !CU_add_test(loggerSuite, "loggers", test_ldfl_syslog_logger) ||
-        !CU_add_test(suite, "general", test_generate_header)) {
+    if (!CU_add_test(loggerSuite, "logger stderr", test_ldfl_stderr_logger) ||
+        !CU_add_test(loggerSuite, "logger systlog", test_ldfl_syslog_logger) ||
+        !CU_add_test(suite, "render list valid", test_ldfl_render_nullable_array_valid) ||
+        !CU_add_test(suite, "empty list", test_ldfl_render_nullable_array_empty) ||
+        !CU_add_test(suite, "null list", test_ldfl_render_nullable_array_null) ||
+        !CU_add_test(suite, "single element list", test_ldfl_render_nullable_array_single_element) ||
+        !CU_add_test(suite, "generate header", test_generate_header)) {
         CU_cleanup_registry();
         return CU_get_error();
     }

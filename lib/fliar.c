@@ -103,6 +103,48 @@ void ldfl_syslog_logger(int priority, const char *fmt, ...) {
     free(out);
 }
 
+char *ldfl_render_nullable_array(char *const list[]) {
+    if (!list)
+        return strdup("[]");
+
+    size_t      total_size    = 3; // For the opening '[', closing ']', and null terminator
+    const char *separator     = ", ";
+    size_t      separator_len = strlen(separator);
+
+    // Calculate the total size needed for the rendered string
+    for (int i = 0; list[i] != NULL; i++) {
+        total_size += strlen(list[i]) + 2; // Account for quotes around each item
+        if (list[i + 1] != NULL)
+            total_size += separator_len;
+    }
+
+    // Allocate memory for the final string
+    char *result = malloc(total_size);
+    if (!result)
+        return NULL; // Memory allocation failed
+
+    // Build the string
+    char *ptr = result;
+    *ptr++    = '['; // Add the opening bracket
+
+    for (int i = 0; list[i] != NULL; i++) {
+        if (i > 0) {
+            memcpy(ptr, separator, separator_len);
+            ptr += separator_len;
+        }
+        *ptr++     = '"'; // Add opening quote
+        size_t len = strlen(list[i]);
+        memcpy(ptr, list[i], len);
+        ptr += len;
+        *ptr++ = '"'; // Add closing quote
+    }
+
+    *ptr++ = ']';  // Add the closing bracket
+    *ptr   = '\0'; // Null-terminate the string
+
+    return result;
+}
+
 // TODO remove
 #define FLIAR_STATIC_CONFIG
 
@@ -355,6 +397,7 @@ int __xstat64(int version, const char *filename, struct stat *statbuf) {
     return real___xstat64(version, filename, statbuf);
 }
 
+//
 int __lxstat(int version, const char *filename, struct stat *statbuf) {
     ldfl_setting.logger(LOG_DEBUG, "__lxstat called: version=%d, filename=%s", version, filename);
     RINIT;
@@ -382,7 +425,8 @@ int futimens(int fd, const struct timespec times[2]) {
 }
 
 int execve(const char *filename, char *const argv[], char *const envp[]) {
-    ldfl_setting.logger(LOG_DEBUG, "execve called: filename=%s, argv=%p, envp=%p", filename, argv, envp);
+    ldfl_setting.logger(LOG_DEBUG, "execve called: filename=%s, argv=%s, envp=%s", filename,
+                        ldfl_render_nullable_array(argv), ldfl_render_nullable_array(envp));
     RINIT;
     return real_execve(filename, argv, envp);
 }
@@ -411,14 +455,14 @@ int execlp(const char *file, const char *arg, ...) {
 
 // Wrapper function for execv with logging
 int execv(const char *path, char *const argv[]) {
-    ldfl_setting.logger(LOG_DEBUG, "execv called: path=%s, argv=%p", path, argv);
+    ldfl_setting.logger(LOG_DEBUG, "execv called: path=%s, argv=%s", path, ldfl_render_nullable_array(argv));
     RINIT;
     return real_execv(path, argv);
 }
 
 // Wrapper function for execvp with logging
 int execvp(const char *file, char *const argv[]) {
-    ldfl_setting.logger(LOG_DEBUG, "execvp called: file=%s, argv=%p", file, argv);
+    ldfl_setting.logger(LOG_DEBUG, "execvp called: file=%s, argv=%s", file, ldfl_render_nullable_array(argv));
     RINIT;
     return real_execvp(file, argv);
 }
@@ -571,4 +615,5 @@ int renameatx_np(int olddirfd, const char *oldpath, int newdirfd, const char *ne
     return real_renameatx_np(olddirfd, oldpath, newdirfd, newpath, flags);
 }
 #endif
+
 #endif
