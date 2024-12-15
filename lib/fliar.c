@@ -100,6 +100,9 @@ void ldfl_syslog_logger(int priority, const char *fmt, ...) {
     fflush(stream);
     fclose(stream);
     syslog(priority, "%s", out);
+    // FIXME work around to avoid weird crashes
+    // needs to be investigated
+    closelog();
     free(out);
 }
 
