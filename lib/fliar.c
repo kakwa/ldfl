@@ -24,14 +24,14 @@
 
 // Define bitmask flags for operation types using 64-bit values
 typedef enum {
-    LDFL_OP_NONE     = 0ULL,      // No operation
+    LDFL_OP_NOOP     = 0ULL,      // No operation
     LDFL_OP_MAP      = 1ULL << 0, // Map operation
     LDFL_OP_EXEC_MAP = 1ULL << 1, // Executable map
     LDFL_OP_MEM_OPEN = 1ULL << 2, // Memory open
     LDFL_OP_STATIC   = 1ULL << 3, // Static file
     LDFL_OP_PERM     = 1ULL << 4, // Change permissions/ownership
     LDFL_OP_DENY     = 1ULL << 5, // Deny access
-    LDFL_OP_END      = 0ULL       // End marker (no operation)
+    LDFL_OP_END      = 1ULL << 63 // End marker
 } ldfl_operation_t;
 
 // Structure for a single mapping entry
@@ -358,14 +358,15 @@ int unlinkat(int dirfd, const char *pathname, int flags) {
 }
 
 int futimes(int fd, const struct timeval times[2]) {
-    ldfl_setting.logger(LOG_DEBUG, "futimes called: fd=%d, times=[%ld, %ld]", fd, times[0].tv_sec, times[1].tv_sec);
+    ldfl_setting.logger(LOG_DEBUG, "futimes called: fd=%d, times=[%ld, %ld]", (times == NULL) ? 0 : times[0].tv_sec,
+                        (times == NULL) ? 0 : times[1].tv_sec);
     RINIT;
     return real_futimes(fd, times);
 }
 
 int utimes(const char *filename, const struct timeval times[2]) {
-    ldfl_setting.logger(LOG_DEBUG, "utimes called: filename=%s, times=[%ld, %ld]", filename, times[0].tv_sec,
-                        times[1].tv_sec);
+    ldfl_setting.logger(LOG_DEBUG, "utimes called: filename=%s, times=[%ld, %ld]", filename,
+                        (times == NULL) ? 0 : times[0].tv_sec, (times == NULL) ? 0 : times[1].tv_sec);
     RINIT;
     return real_utimes(filename, times);
 }
@@ -400,7 +401,6 @@ int __xstat64(int version, const char *filename, struct stat *statbuf) {
     return real___xstat64(version, filename, statbuf);
 }
 
-//
 int __lxstat(int version, const char *filename, struct stat *statbuf) {
     ldfl_setting.logger(LOG_DEBUG, "__lxstat called: version=%d, filename=%s", version, filename);
     RINIT;
@@ -416,20 +416,24 @@ int __fxstatat(int version, int dirfd, const char *pathname, struct stat *statbu
 
 int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags) {
     ldfl_setting.logger(LOG_DEBUG, "utimensat called: dirfd=%d, pathname=%s, times=[%ld, %ld], flags=%d", dirfd,
-                        pathname, times[0].tv_sec, times[1].tv_sec, flags);
+                        pathname, (times == NULL) ? 0 : times[0].tv_sec, (times == NULL) ? 0 : times[1].tv_sec, flags);
     RINIT;
     return real_utimensat(dirfd, pathname, times, flags);
 }
 
 int futimens(int fd, const struct timespec times[2]) {
-    ldfl_setting.logger(LOG_DEBUG, "futimens called: fd=%d, times=[%ld, %ld]", fd, times[0].tv_sec, times[1].tv_sec);
+    ldfl_setting.logger(LOG_DEBUG, "futimens called: fd=%d, times=[%ld, %ld]", fd,
+                        (times == NULL) ? 0 : times[0].tv_sec, (times == NULL) ? 0 : times[1].tv_sec);
     RINIT;
     return real_futimens(fd, times);
 }
 
 int execve(const char *filename, char *const argv[], char *const envp[]) {
-    ldfl_setting.logger(LOG_DEBUG, "execve called: filename=%s, argv=%s, envp=%s", filename,
-                        ldfl_render_nullable_array(argv), ldfl_render_nullable_array(envp));
+    char *argv_str = ldfl_render_nullable_array(argv);
+    char *envp_str = ldfl_render_nullable_array(envp);
+    ldfl_setting.logger(LOG_DEBUG, "execve called: filename=%s, argv=%s, envp=%s", filename, argv_str, envp_str);
+    free(argv_str);
+    free(envp_str);
     RINIT;
     return real_execve(filename, argv, envp);
 }
@@ -458,14 +462,18 @@ int execlp(const char *file, const char *arg, ...) {
 
 // Wrapper function for execv with logging
 int execv(const char *path, char *const argv[]) {
-    ldfl_setting.logger(LOG_DEBUG, "execv called: path=%s, argv=%s", path, ldfl_render_nullable_array(argv));
+    char *argv_str = ldfl_render_nullable_array(argv);
+    ldfl_setting.logger(LOG_DEBUG, "execv called: path=%s, argv=%s", path, argv_str);
+    free(argv_str);
     RINIT;
     return real_execv(path, argv);
 }
 
 // Wrapper function for execvp with logging
 int execvp(const char *file, char *const argv[]) {
-    ldfl_setting.logger(LOG_DEBUG, "execvp called: file=%s, argv=%s", file, ldfl_render_nullable_array(argv));
+    char *argv_str = ldfl_render_nullable_array(argv);
+    ldfl_setting.logger(LOG_DEBUG, "execvp called: file=%s, argv=%s", file, argv_str);
+    free(argv_str);
     RINIT;
     return real_execvp(file, argv);
 }
