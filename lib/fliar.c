@@ -8,19 +8,21 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdio.h>
+
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
-#include <pcre.h>
 #include <dlfcn.h>
 #include <assert.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <dirent.h>
 #include <sys/time.h>
+#include <glob.h>
 #include <unistd.h>
 
-#include <glob.h>
+#include <syslog.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 // Define bitmask flags for operation types using 64-bit values
 typedef enum {
@@ -52,9 +54,16 @@ typedef struct {
     ldfl_logger_t logger;    // Variadic logger function pointer
 } ldfl_setting_t;
 
+// Wrapper struct to store compiled regex
+typedef struct {
+    const ldfl_mapping_t *mapping;        // Pointer to the original mapping
+    pcre2_code           *matching_regex; // Compiled matching regex
+} compiled_mapping_t;
+
 // Example default blob data
 static const unsigned char ldf_default_blob[] = "hello from ld-fliar";
 
+uint64_t              ldfl_rule_count;
 extern ldfl_setting_t ldfl_setting;
 
 // Empty logger
@@ -148,6 +157,8 @@ char *ldfl_render_nullable_array(char *const list[]) {
     return result;
 }
 
+compiled_mapping_t *ldfl_compiled_rules;
+
 // TODO remove
 #define FLIAR_STATIC_CONFIG
 
@@ -155,6 +166,47 @@ char *ldfl_render_nullable_array(char *const list[]) {
 // TODO fix path
 #include "../cfg/ldfl-config.h"
 #endif
+
+uint64_t ldfl_get_rule_count() {
+    uint64_t i = 0;
+    while (ldfl_mapping[i].operation != LDFL_OP_END)
+        i++;
+    return i;
+}
+
+void ldfl_regex_init() {
+    ldfl_rule_count = ldfl_get_rule_count();
+
+    ldfl_compiled_rules = calloc(sizeof(compiled_mapping_t), ldfl_rule_count);
+    for (int i = 0; i < ldfl_rule_count; i++) {
+        pcre2_code *re;
+        PCRE2_SPTR  pattern_ptr = (PCRE2_SPTR)ldfl_mapping[i].search_pattern;
+
+        // Error handling variables
+        int        errornumber;
+        PCRE2_SIZE erroroffset;
+
+        // Compile the regular expression
+        re = pcre2_compile(pattern_ptr, PCRE2_ZERO_TERMINATED, 0, &errornumber, &erroroffset, NULL);
+        if (!re) {
+            PCRE2_UCHAR buffer[256];
+            pcre2_get_error_message(errornumber, buffer, sizeof(buffer));
+            ldfl_setting.logger(LOG_CRIT, "rule[%s], PCRE2 compilation failed at offset %d: %s\n", ldfl_mapping[i].name,
+                                (int)erroroffset, buffer);
+            assert(re);
+        }
+
+        ldfl_compiled_rules[i].mapping        = &ldfl_mapping[i];
+        ldfl_compiled_rules[i].matching_regex = re;
+    }
+}
+
+void ldfl_regex_free() {
+    for (int i = 0; i < ldfl_rule_count; i++) {
+        pcre2_code_free(ldfl_compiled_rules[i].matching_regex);
+    }
+    free(ldfl_compiled_rules);
+}
 
 #ifndef LDLF_UTILS_TESTING
 
@@ -227,6 +279,7 @@ int (*real_renameatx_np)(int olddirfd, const char *oldpath, int newdirfd, const 
 
 static void __attribute__((constructor(101))) ldfl_init() {
     ldfl_setting.logger(LOG_DEBUG, "ld-fliar init called");
+    ldfl_regex_init();
     REAL(openat);
     REAL(fopen);
     REAL(fopen64);
@@ -284,6 +337,12 @@ static void __attribute__((constructor(101))) ldfl_init() {
 #endif
     ldfl_is_init = true;
     ldfl_setting.logger(LOG_DEBUG, "initialized");
+}
+
+static void __attribute__((destructor(101))) ldfl_dinit() {
+    ldfl_setting.logger(LOG_DEBUG, "ld-fliar dinit called");
+    ldfl_regex_free();
+    ldfl_setting.logger(LOG_DEBUG, "freed");
 }
 
 int openat(int dirfd, const char *pathname, int flags, mode_t mode) {

@@ -9,6 +9,7 @@ set(fliar_VERSION_PATCH 0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
+find_package(PCRE2 REQUIRED)
 find_library(CUNIT_LIBRARY cunit)
 
 set(fliar_VERSION
@@ -73,7 +74,7 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 link_directories(${CMAKE_BINARY_DIR}/ /usr/local/lib /usr/lib/)
 
 # headers directories
-include_directories(./inc/ ${ZLIB_INCLUDE_DIRS} ${PCRE_INCLUDE_DIRS}
+include_directories(./inc/ ${ZLIB_INCLUDE_DIRS} ${PCRE2_INCLUDE_DIRS}
                     /usr/include/ /sw/include/)
 
 file(GLOB fliar_SOURCES lib/*.c)
@@ -83,9 +84,9 @@ set_target_properties(fliar PROPERTIES VERSION ${fliar_VERSION}
 
 # Compile the executable
 add_executable(fliar-cli fliar.c)
-target_link_libraries(fliar ${PCRE_LIBRARY})
+target_link_libraries(fliar ${PCRE2_LIBRARY})
 
-target_link_libraries(fliar-cli fliar ${PCRE_LIBRARY})
+target_link_libraries(fliar-cli fliar ${PCRE2_LIBRARY})
 
 if(BUILD_TESTS)
   if(CUNIT_LIBRARY)
@@ -94,7 +95,7 @@ if(BUILD_TESTS)
     include_directories(./lib ./utils)
     add_test(NAME fliar-test COMMAND fliar-test)
     add_executable(fliar-test tests/tests.c)
-    target_link_libraries(fliar-test ${PCRE_LIBRARY} ${CUNIT_LIBRARY})
+    target_link_libraries(fliar-test ${PCRE2_LIBRARY} ${CUNIT_LIBRARY})
 
     # Add the test target
     add_custom_target(
