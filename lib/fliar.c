@@ -69,15 +69,15 @@ void ldfl_stderr_logger(int priority, const char *fmt, ...) {
     if (priority > ldfl_setting.log_level)
         return;
 
-    fprintf(stderr, "LOG_%s: ",
-            (priority == LOG_EMERG)     ? "EMER"
-            : (priority == LOG_ALERT)   ? "ALERT"
-            : (priority == LOG_CRIT)    ? "CRIT"
-            : (priority == LOG_ERR)     ? "ERR"
-            : (priority == LOG_WARNING) ? "WARNING"
-            : (priority == LOG_NOTICE)  ? "NOTICE"
-            : (priority == LOG_INFO)    ? "INFO"
-                                        : "DEBUG");
+    fprintf(stderr, "LOG_%s ",
+            (priority == LOG_EMERG)     ? "EMER:    "
+            : (priority == LOG_ALERT)   ? "ALERT:   "
+            : (priority == LOG_CRIT)    ? "CRIT:    "
+            : (priority == LOG_ERR)     ? "ERR:     "
+            : (priority == LOG_WARNING) ? "WARNING: "
+            : (priority == LOG_NOTICE)  ? "NOTICE:  "
+            : (priority == LOG_INFO)    ? "INFO:    "
+                                        : "DEBUG:   ");
     vfprintf(stderr, fmt, args);
     fprintf(stderr, "\n");
     va_end(args);
