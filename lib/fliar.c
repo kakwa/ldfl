@@ -21,7 +21,9 @@
 #include <unistd.h>
 
 #include <syslog.h>
+#ifndef PCRE2_CODE_UNIT_WIDTH
 #define PCRE2_CODE_UNIT_WIDTH 8
+#endif
 #include <pcre2.h>
 
 // Bitmask flags for operation types
