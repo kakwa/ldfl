@@ -320,53 +320,68 @@ int (*real_renameatx_np)(int olddirfd, const char *oldpath, int newdirfd, const 
 static void __attribute__((constructor(101))) ldfl_init() {
     ldfl_setting.logger(LOG_DEBUG, "ld-fliar init called");
     ldfl_regex_init();
-    REAL(openat);
     REAL(fopen);
     REAL(fopen64);
+    REAL(freopen); // TODO
     REAL(open);
+    REAL(creat); // TODO
     REAL(open64);
+    REAL(openat);
     REAL(openat64);
+    REAL(openat2);   // TODO
+    REAL(openat264); // TODO
     REAL(rename);
-    REAL(renameat2);
     REAL(renameat);
-    REAL(unlink);
-    REAL(unlinkat);
-    // REAL(futimes);
+    REAL(renameat2);
     REAL(utimes);
+    REAL(utimensat);
     REAL(access);
+    REAL(faccessat);
+    REAL(stat);
+    REAL(lstat);
     REAL(fstatat);
-    // REAL(__fxstat);
+    REAL(statx); // TODO
     REAL(__xstat);
     REAL(__xstat64);
     REAL(__lxstat);
     REAL(__fxstatat);
-    REAL(utimensat);
-    // REAL(futimens);
     REAL(execve);
     REAL(execl);
     REAL(execlp);
     REAL(execv);
     REAL(execvp);
-    REAL(glob);
     REAL(opendir);
-    // REAL(fdopendir);
     REAL(mkdir);
     REAL(mkdirat);
+    REAL(mknod);    // TODO
+    REAL(mknodat);  // TODO
+    REAL(mkfifo);   // TODO
+    REAL(mkfifoat); // TODO
     REAL(rmdir);
     REAL(chdir);
-    // REAL(fchdir);
     REAL(symlink);
+    REAL(symlinkat); // TODO
     REAL(readlink);
+    REAL(readlinkat); // TODO
     REAL(link);
     REAL(linkat);
+    REAL(unlink);
+    REAL(unlinkat);
     REAL(chmod);
-    // REAL(fchmod);
+    REAL(fchmodat); // TODO
+    REAL(chown);    // TODO
+    REAL(lchown);   // TODO
     REAL(truncate);
+    REAL(glob);
+
+    // REAL(__fxstat);
+    // REAL(futimens);
+    // REAL(fdopendir);
+    // REAL(fchdir);
+    // REAL(fchmod);
     // REAL(ftruncate);
-    REAL(faccessat);
     // REAL(lseek);
-    REAL(stat);
-    REAL(lstat);
+    // REAL(futimes);
     // REAL(fstat);
     // REAL(getcwd);
 
@@ -1026,6 +1041,7 @@ int renameatx_np(int olddirfd, const char *oldpath, int newdirfd, const char *ne
     ldfl_find_matching_rule("renameatx_np", oldpath, op_mask, &return_rule, &return_pcre_match);
     // pcre2_match_data_free(return_pcre_match);
     // TODO newpath
+    //
     return real_renameatx_np(olddirfd, oldpath, newdirfd, newpath, flags);
 }
 #endif
