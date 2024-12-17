@@ -8,7 +8,7 @@ ldfl_mapping_t ldfl_mapping[] = {
     { "allow & do nothing 1", "^/dev.*",              LDFL_OP_NOOP,     NULL,                 NULL},
     { "allow & do nothing 2", "^/proc.*",             LDFL_OP_NOOP,     NULL,                 NULL},
     { "allow & do nothing 3", "^/sys.*",              LDFL_OP_NOOP,     NULL,                 NULL},
-    { "defaul&t deny",         ".*",                  LDFL_OP_DENY,     NULL,                 NULL},
+    { "default & deny",       ".*",                   LDFL_OP_DENY,     NULL,                 NULL},
     { NULL,                   NULL,                   LDFL_OP_END,      NULL,                 NULL} // keep this last value
 };
 
