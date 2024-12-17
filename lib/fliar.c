@@ -262,6 +262,7 @@ bool ldfl_is_init;
 int (*real_openat)(int dirfd, const char *pathname, int flags, mode_t mode);
 FILE *(*real_fopen)(const char *filename, const char *mode);
 FILE *(*real_fopen64)(const char *filename, const char *mode);
+FILE *(*real_freopen)(const char *restrict pathname, const char *restrict mode, FILE *restrict stream);
 int (*real_open)(const char *pathname, int flags, mode_t mode);
 int (*real_open64)(const char *pathname, int flags, mode_t mode);
 int (*real_openat64)(int dirfd, const char *pathname, int flags, mode_t mode);
@@ -270,17 +271,14 @@ int (*real_renameat2)(int olddirfd, const char *oldpath, int newdirfd, const cha
 int (*real_renameat)(int olddirfd, const char *oldpath, int newdirfd, const char *newpath);
 int (*real_unlink)(const char *pathname);
 int (*real_unlinkat)(int dirfd, const char *pathname, int flags);
-// int (*real_futimes)(int fd, const struct timeval times[2]);
 int (*real_utimes)(const char *filename, const struct timeval times[2]);
 int (*real_access)(const char *pathname, int mode);
 int (*real_fstatat)(int dirfd, const char *pathname, struct stat *statbuf, int flags);
-// int (*real___fxstat)(int version, int fd, struct stat *statbuf);
 int (*real___xstat)(int version, const char *filename, struct stat *statbuf);
 int (*real___xstat64)(int version, const char *filename, struct stat *statbuf);
 int (*real___lxstat)(int version, const char *filename, struct stat *statbuf);
 int (*real___fxstatat)(int version, int dirfd, const char *pathname, struct stat *statbuf, int flags);
 int (*real_utimensat)(int dirfd, const char *pathname, const struct timespec times[2], int flags);
-// int (*real_futimens)(int fd, const struct timespec times[2]);
 int (*real_execve)(const char *filename, char *const argv[], char *const envp[]);
 int (*real_execl)(const char *path, const char *arg, ...);
 int (*real_execlp)(const char *file, const char *arg, ...);
@@ -288,26 +286,45 @@ int (*real_execv)(const char *path, char *const argv[]);
 int (*real_execvp)(const char *file, char *const argv[]);
 int (*real_glob)(const char *pattern, int flags, int (*errfunc)(const char *, int), glob_t *pglob);
 DIR *(*real_opendir)(const char *name);
-// DIR *(*real_fdopendir)(int fd);
 int (*real_mkdir)(const char *pathname, mode_t mode);
 int (*real_mkdirat)(int dirfd, const char *pathname, mode_t mode);
 int (*real_rmdir)(const char *pathname);
 int (*real_chdir)(const char *path);
-// int (*real_fchdir)(int fd);
 int (*real_symlink)(const char *target, const char *linkpath);
 ssize_t (*real_readlink)(const char *pathname, char *buf, size_t bufsiz);
 int (*real_link)(const char *oldpath, const char *newpath);
 int (*real_linkat)(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags);
 int (*real_chmod)(const char *path, mode_t mode);
-// int (*real_fchmod)(int fd, mode_t mode);
 int (*real_truncate)(const char *path, off_t length);
-// int (*real_ftruncate)(int fd, off_t length);
 int (*real_faccessat)(int dirfd, const char *pathname, int mode, int flags);
-// off_t (*real_lseek)(int fd, off_t offset, int whence);
 int (*real_stat)(const char *pathname, struct stat *statbuf);
 int (*real_lstat)(const char *pathname, struct stat *statbuf);
+int (*real_lchown)(const char *pathname, uid_t owner, gid_t group);
+int (*real_chown)(const char *pathname, uid_t owner, gid_t group);
+int (*real_fchmodat)(int dirfd, const char *pathname, mode_t mode, int flags);
+ssize_t (*real_readlink)(const char *restrict pathname, char *restrict buf, size_t bufsiz);
+ssize_t (*real_readlinkat)(int dirfd, const char *restrict pathname, char *restrict buf, size_t bufsiz);
+int (*real_symlinkat)(const char *target, int newdirfd, const char *linkpath);
+int (*real_mkfifo)(const char *pathname, mode_t mode);
+int (*real_mkfifoat)(int dirfd, const char *pathname, mode_t mode);
+int (*real_mknodat)(int dirfd, const char *pathname, mode_t mode, dev_t dev);
+int (*real_mknod)(const char *pathname, mode_t mode, dev_t dev);
+int (*real_statx)(int dirfd, const char *restrict pathname, int flags, unsigned int mask,
+                  struct statx *restrict statxbuf);
+int (*real_creat)(const char *pathname, mode_t mode);
+int (*real_lstat)(const char *restrict pathname, struct stat *restrict statbuf);
+
+// DIR *(*real_fdopendir)(int fd);
+// int (*real_fchdir)(int fd);
+// int (*real_fchmod)(int fd, mode_t mode);
+// int (*real_futimes)(int fd, const struct timeval times[2]);
+// int (*real_futimens)(int fd, const struct timespec times[2]);
+// int (*real_ftruncate)(int fd, off_t length);
 // int (*real_fstat)(int fd, struct stat *statbuf);
+// int (*real___fxstat)(int version, int fd, struct stat *statbuf);
+// int (*real_fchmod)(int fd, mode_t mode);
 // char *(*real_getcwd)(char *buf, size_t size);
+// off_t (*real_lseek)(int fd, off_t offset, int whence);
 
 #if defined(__APPLE__)
 int (*real_renamex_np)(const char *oldpath, const char *newpath, int flags);
@@ -322,14 +339,12 @@ static void __attribute__((constructor(101))) ldfl_init() {
     ldfl_regex_init();
     REAL(fopen);
     REAL(fopen64);
-    REAL(freopen); // TODO
+    REAL(freopen);
     REAL(open);
-    REAL(creat); // TODO
+    REAL(creat);
     REAL(open64);
     REAL(openat);
     REAL(openat64);
-    REAL(openat2);   // TODO
-    REAL(openat264); // TODO
     REAL(rename);
     REAL(renameat);
     REAL(renameat2);
@@ -340,7 +355,7 @@ static void __attribute__((constructor(101))) ldfl_init() {
     REAL(stat);
     REAL(lstat);
     REAL(fstatat);
-    REAL(statx); // TODO
+    REAL(statx);
     REAL(__xstat);
     REAL(__xstat64);
     REAL(__lxstat);
@@ -353,24 +368,23 @@ static void __attribute__((constructor(101))) ldfl_init() {
     REAL(opendir);
     REAL(mkdir);
     REAL(mkdirat);
-    REAL(mknod);    // TODO
-    REAL(mknodat);  // TODO
-    REAL(mkfifo);   // TODO
-    REAL(mkfifoat); // TODO
+    REAL(mknod);
+    REAL(mknodat);
+    REAL(mkfifo);
+    REAL(mkfifoat);
     REAL(rmdir);
     REAL(chdir);
     REAL(symlink);
-    REAL(symlinkat); // TODO
+    REAL(symlinkat);
     REAL(readlink);
-    REAL(readlinkat); // TODO
+    REAL(readlinkat);
     REAL(link);
     REAL(linkat);
     REAL(unlink);
     REAL(unlinkat);
     REAL(chmod);
-    REAL(fchmodat); // TODO
-    REAL(chown);    // TODO
-    REAL(lchown);   // TODO
+    REAL(chown);
+    REAL(lchown);
     REAL(truncate);
     REAL(glob);
 
@@ -382,6 +396,7 @@ static void __attribute__((constructor(101))) ldfl_init() {
     // REAL(ftruncate);
     // REAL(lseek);
     // REAL(futimes);
+    // REAL(fchmodat);
     // REAL(fstat);
     // REAL(getcwd);
 
@@ -551,16 +566,6 @@ int unlinkat(int dirfd, const char *pathname, int flags) {
     return real_unlinkat(dirfd, pathname, flags);
 }
 
-// No path on this one, maybe we would do something in the futur if we were to track file descriptor
-// int futimes(int fd, const struct timeval times[2]) {
-//    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
-//    LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "futimes called: fd=%d, times=[%ld, %ld]", (times ==
-//    NULL) ? 0 : times[0].tv_sec,
-//                        (times == NULL) ? 0 : times[1].tv_sec);
-//    RINIT;
-//    return real_futimes(fd, times);
-//}
-
 int utimes(const char *filename, const struct timeval times[2]) {
     uint64_t op_mask =
         LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
@@ -600,13 +605,6 @@ int fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags) {
 
     return real_fstatat(dirfd, pathname, statbuf, flags);
 }
-
-// No path on this one, maybe we would do something in the futur if we were to track file descriptor
-// int __fxstat(int version, int fd, struct stat *statbuf) {
-//    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
-//    LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "__fxstat called: version=%d, fd=%d", version, fd);
-//    RINIT; return real___fxstat(version, fd, statbuf);
-//}
 
 int __xstat(int version, const char *filename, struct stat *statbuf) {
     uint64_t op_mask =
@@ -674,15 +672,6 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2], i
 
     return real_utimensat(dirfd, pathname, times, flags);
 }
-
-// No path on this one, maybe we would do something in the futur if we were to track file descriptor
-// int futimens(int fd, const struct timespec times[2]) {
-//     uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
-//     LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "futimens called: fd=%d, times=[%ld, %ld]", fd,
-//                         (times == NULL) ? 0 : times[0].tv_sec, (times == NULL) ? 0 : times[1].tv_sec);
-//     RINIT;
-//     return real_futimens(fd, times);
-// }
 
 int execve(const char *filename, char *const argv[], char *const envp[]) {
     uint64_t op_mask =
@@ -781,13 +770,6 @@ DIR *opendir(const char *name) {
     return real_opendir(name);
 }
 
-// No path on this one, maybe we would do something in the futur if we were to track file descriptor
-// DIR *fdopendir(int fd) {
-//    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
-//    LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "fdopendir called: fd=%d", fd); RINIT; return
-//    real_fdopendir(fd);
-//}
-
 int mkdir(const char *pathname, mode_t mode) {
     uint64_t op_mask =
         LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
@@ -839,18 +821,6 @@ int chdir(const char *path) {
 
     return real_chdir(path);
 }
-
-// No path on this one, maybe we would do something in the futur if we were to track file descriptor
-// int fchdir(int fd) {
-//    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
-//    LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "fchdir called: fd=%d", fd); RINIT;
-//	compiled_mapping_t return_rule;
-//	pcre2_match_data *return_pcre_match;
-//	ldfl_find_matching_rule("renameatx_np", oldpath, op_mask, &return_rule, &return_pcre_match);
-//    // pcre2_match_data_free(return_pcre_match);
-//
-//    return real_fchdir(fd);
-//}
 
 int symlink(const char *target, const char *linkpath) {
     uint64_t op_mask =
@@ -921,14 +891,6 @@ int chmod(const char *path, mode_t mode) {
     return real_chmod(path, mode);
 }
 
-// No path on this one, maybe we would do something in the futur if we were to track file descriptor
-// int fchmod(int fd, mode_t mode) {
-//    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
-//    LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "fchmod called: fd=%d, mode=%o", fd, mode); RINIT;
-//
-//    return real_fchmod(fd, mode);
-//}
-
 int truncate(const char *path, off_t length) {
     uint64_t op_mask =
         LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
@@ -941,15 +903,6 @@ int truncate(const char *path, off_t length) {
 
     return real_truncate(path, length);
 }
-
-// No path on this one, maybe we would do something in the futur if we were to track file descriptor
-// int ftruncate(int fd, off_t length) {
-//    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
-//    LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "ftruncate called: fd=%d, length=%ld", fd, length);
-//    RINIT;
-//
-//    return real_ftruncate(fd, length);
-//}
 
 int faccessat(int dirfd, const char *pathname, int mode, int flags) {
     uint64_t op_mask =
@@ -964,13 +917,6 @@ int faccessat(int dirfd, const char *pathname, int mode, int flags) {
 
     return real_faccessat(dirfd, pathname, mode, flags);
 }
-
-// No path on this one, maybe we would do something in the futur if we were to track file descriptor
-// off_t lseek(int fd, off_t offset, int whence) {
-//    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
-//    LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "lseek called: fd=%d, offset=%ld, whence=%d", fd,
-//    offset, whence); RINIT; return real_lseek(fd, offset, whence);
-//}
 
 int stat(const char *pathname, struct stat *statbuf) {
     uint64_t op_mask =
@@ -998,6 +944,149 @@ int lstat(const char *pathname, struct stat *statbuf) {
     return real_lstat(pathname, statbuf);
 }
 
+int lchown(const char *pathname, uid_t owner, gid_t group) {
+    uint64_t op_mask =
+        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
+
+    ldfl_setting.logger(LOG_DEBUG, "lchown called: pathname=%s, owner=%d, group=%d", pathname, owner, group);
+    RINIT;
+    compiled_mapping_t return_rule;
+    pcre2_match_data  *return_pcre_match;
+    ldfl_find_matching_rule("lchown", pathname, op_mask, &return_rule, &return_pcre_match);
+    // pcre2_match_data_free(return_pcre_match);
+
+    return real_lchown(pathname, owner, group);
+}
+
+int chown(const char *pathname, uid_t owner, gid_t group) {
+    uint64_t op_mask =
+        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
+
+    ldfl_setting.logger(LOG_DEBUG, "chown called: pathname=%s, owner=%d, group=%d", pathname, owner, group);
+    RINIT;
+    compiled_mapping_t return_rule;
+    pcre2_match_data  *return_pcre_match;
+    ldfl_find_matching_rule("chown", pathname, op_mask, &return_rule, &return_pcre_match);
+    // pcre2_match_data_free(return_pcre_match);
+
+    return real_chown(pathname, owner, group);
+}
+
+int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
+    uint64_t op_mask =
+        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
+
+    ldfl_setting.logger(LOG_DEBUG, "fchmodat called: dirfd=%d, pathname=%s, mode=%o, flags=%d", dirfd, pathname, mode,
+                        flags);
+    RINIT;
+    compiled_mapping_t return_rule;
+    pcre2_match_data  *return_pcre_match;
+    ldfl_find_matching_rule("fchmodat", pathname, op_mask, &return_rule, &return_pcre_match);
+    // pcre2_match_data_free(return_pcre_match);
+
+    return real_fchmodat(dirfd, pathname, mode, flags);
+}
+
+int symlinkat(const char *target, int newdirfd, const char *linkpath) {
+    uint64_t op_mask =
+        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
+
+    ldfl_setting.logger(LOG_DEBUG, "symlinkat called: target=%s, newdirfd=%d, linkpath=%s", target, newdirfd, linkpath);
+    RINIT;
+    compiled_mapping_t return_rule;
+    pcre2_match_data  *return_pcre_match;
+    ldfl_find_matching_rule("symlinkat", linkpath, op_mask, &return_rule, &return_pcre_match);
+    // pcre2_match_data_free(return_pcre_match);
+
+    return real_symlinkat(target, newdirfd, linkpath);
+}
+
+int mkfifo(const char *pathname, mode_t mode) {
+    uint64_t op_mask =
+        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
+
+    ldfl_setting.logger(LOG_DEBUG, "mkfifo called: pathname=%s, mode=%o", pathname, mode);
+    RINIT;
+    compiled_mapping_t return_rule;
+    pcre2_match_data  *return_pcre_match;
+    ldfl_find_matching_rule("mkfifo", pathname, op_mask, &return_rule, &return_pcre_match);
+    // pcre2_match_data_free(return_pcre_match);
+
+    return real_mkfifo(pathname, mode);
+}
+
+int mkfifoat(int dirfd, const char *pathname, mode_t mode) {
+    uint64_t op_mask =
+        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
+
+    ldfl_setting.logger(LOG_DEBUG, "mkfifoat called: dirfd=%d, pathname=%s, mode=%o", dirfd, pathname, mode);
+    RINIT;
+    compiled_mapping_t return_rule;
+    pcre2_match_data  *return_pcre_match;
+    ldfl_find_matching_rule("mkfifoat", pathname, op_mask, &return_rule, &return_pcre_match);
+    // pcre2_match_data_free(return_pcre_match);
+
+    return real_mkfifoat(dirfd, pathname, mode);
+}
+
+int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev) {
+    uint64_t op_mask =
+        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
+
+    ldfl_setting.logger(LOG_DEBUG, "mknodat called: dirfd=%d, pathname=%s, mode=%o, dev=%lu", dirfd, pathname, mode,
+                        (unsigned long)dev);
+    RINIT;
+    compiled_mapping_t return_rule;
+    pcre2_match_data  *return_pcre_match;
+    ldfl_find_matching_rule("mknodat", pathname, op_mask, &return_rule, &return_pcre_match);
+    // pcre2_match_data_free(return_pcre_match);
+
+    return real_mknodat(dirfd, pathname, mode, dev);
+}
+
+int mknod(const char *pathname, mode_t mode, dev_t dev) {
+    uint64_t op_mask =
+        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
+
+    ldfl_setting.logger(LOG_DEBUG, "mknod called: pathname=%s, mode=%o, dev=%lu", pathname, mode, (unsigned long)dev);
+    RINIT;
+    compiled_mapping_t return_rule;
+    pcre2_match_data  *return_pcre_match;
+    ldfl_find_matching_rule("mknod", pathname, op_mask, &return_rule, &return_pcre_match);
+    // pcre2_match_data_free(return_pcre_match);
+
+    return real_mknod(pathname, mode, dev);
+}
+
+int statx(int dirfd, const char *restrict pathname, int flags, unsigned int mask, struct statx *restrict statxbuf) {
+    uint64_t op_mask =
+        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
+
+    ldfl_setting.logger(LOG_DEBUG, "statx called: dirfd=%d, pathname=%s, flags=%d, mask=%u", dirfd, pathname, flags,
+                        mask);
+    RINIT;
+    compiled_mapping_t return_rule;
+    pcre2_match_data  *return_pcre_match;
+    ldfl_find_matching_rule("statx", pathname, op_mask, &return_rule, &return_pcre_match);
+    // pcre2_match_data_free(return_pcre_match);
+
+    return real_statx(dirfd, pathname, flags, mask, statxbuf);
+}
+
+int creat(const char *pathname, mode_t mode) {
+    uint64_t op_mask =
+        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
+
+    ldfl_setting.logger(LOG_DEBUG, "creat called: pathname=%s, mode=%o", pathname, mode);
+    RINIT;
+    compiled_mapping_t return_rule;
+    pcre2_match_data  *return_pcre_match;
+    ldfl_find_matching_rule("creat", pathname, op_mask, &return_rule, &return_pcre_match);
+    // pcre2_match_data_free(return_pcre_match);
+
+    return real_creat(pathname, mode);
+}
+
 // No path on this one, maybe we would do something in the futur if we were to track file descriptor
 // int fstat(int fd, struct stat *statbuf) {
 //    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
@@ -1014,6 +1103,87 @@ int lstat(const char *pathname, struct stat *statbuf) {
 //     RINIT;
 //     return real_getcwd(buf, size);
 // }
+
+// No path on this one, maybe we would do something in the futur if we were to track file descriptor
+// int futimes(int fd, const struct timeval times[2]) {
+//    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
+//    LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "futimes called: fd=%d, times=[%ld, %ld]", (times ==
+//    NULL) ? 0 : times[0].tv_sec,
+//                        (times == NULL) ? 0 : times[1].tv_sec);
+//    RINIT;
+//    return real_futimes(fd, times);
+//}
+
+// int fchmod(int fd, mode_t mode) {
+//     uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
+//     ldfl_setting.logger(LOG_DEBUG, "fchmod called: fd=%d, mode=%o", fd, mode);
+//     RINIT;
+//     compiled_mapping_t return_rule;
+//     pcre2_match_data *return_pcre_match;
+//     ldfl_find_matching_rule("fchmod", NULL, op_mask, &return_rule, &return_pcre_match);
+//     // pcre2_match_data_free(return_pcre_match);
+//
+//     return real_fchmod(fd, mode);
+// }
+
+// No path on this one, maybe we would do something in the futur if we were to track file descriptor
+// off_t lseek(int fd, off_t offset, int whence) {
+//    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
+//    LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "lseek called: fd=%d, offset=%ld, whence=%d", fd,
+//    offset, whence); RINIT; return real_lseek(fd, offset, whence);
+//}
+
+// No path on this one, maybe we would do something in the futur if we were to track file descriptor
+// int ftruncate(int fd, off_t length) {
+//    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
+//    LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "ftruncate called: fd=%d, length=%ld", fd, length);
+//    RINIT;
+//
+//    return real_ftruncate(fd, length);
+//}
+
+// No path on this one, maybe we would do something in the futur if we were to track file descriptor
+// int fchmod(int fd, mode_t mode) {
+//    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
+//    LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "fchmod called: fd=%d, mode=%o", fd, mode); RINIT;
+//
+//    return real_fchmod(fd, mode);
+//}
+
+// No path on this one, maybe we would do something in the futur if we were to track file descriptor
+// int fchdir(int fd) {
+//    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
+//    LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "fchdir called: fd=%d", fd); RINIT;
+//	compiled_mapping_t return_rule;
+//	pcre2_match_data *return_pcre_match;
+//	ldfl_find_matching_rule("renameatx_np", oldpath, op_mask, &return_rule, &return_pcre_match);
+//    // pcre2_match_data_free(return_pcre_match);
+//
+//    return real_fchdir(fd);
+//}
+
+// No path on this one, maybe we would do something in the futur if we were to track file descriptor
+// DIR *fdopendir(int fd) {
+//    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
+//    LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "fdopendir called: fd=%d", fd); RINIT; return
+//    real_fdopendir(fd);
+//}
+
+// No path on this one, maybe we would do something in the futur if we were to track file descriptor
+// int futimens(int fd, const struct timespec times[2]) {
+//     uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
+//     LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "futimens called: fd=%d, times=[%ld, %ld]", fd,
+//                         (times == NULL) ? 0 : times[0].tv_sec, (times == NULL) ? 0 : times[1].tv_sec);
+//     RINIT;
+//     return real_futimens(fd, times);
+// }
+
+// No path on this one, maybe we would do something in the futur if we were to track file descriptor
+// int __fxstat(int version, int fd, struct stat *statbuf) {
+//    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_EXEC_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC |
+//    LDFL_OP_PERM | LDFL_OP_DENY; ldfl_setting.logger(LOG_DEBUG, "__fxstat called: version=%d, fd=%d", version, fd);
+//    RINIT; return real___fxstat(version, fd, statbuf);
+//}
 
 #if defined(__APPLE__)
 int renamex_np(const char *oldpath, const char *newpath, int flags) {
