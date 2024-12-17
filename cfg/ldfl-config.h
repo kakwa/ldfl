@@ -12,9 +12,30 @@ ldfl_mapping_t ldfl_mapping[] = {
     { NULL,                   NULL,                   LDFL_OP_END,      NULL,                 NULL} // keep this last value
 };
 
+
+/*
+
+.log_level values:
+* LOG_EMERG
+* LOG_ALERT
+* LOG_CRIT
+* LOG_ERR
+* LOG_WARNING
+* LOG_NOTICE
+* LOG_INFO
+* LOG_DEBUG
+
+.logger values:
+* ldfl_syslog_logger
+* ldfl_stderr_logger
+* ldfl_dummy_logger
+
+or any logger implementing:
+void cust_logger(int priority, const char *fmt, ...) {}
+
+*/
+
 ldfl_setting_t ldfl_setting = {
     .log_level   = LOG_DEBUG,
     .logger      = ldfl_syslog_logger,
 };
-
-/* ADDITIONAL BLOBS */

@@ -69,7 +69,7 @@ uint64_t              ldfl_rule_count;
 extern ldfl_setting_t ldfl_setting;
 
 // Empty logger
-void ldfl_none_logger(int priority, const char *fmt, ...) {
+void ldfl_dummy_logger(int priority, const char *fmt, ...) {
     return;
 }
 
