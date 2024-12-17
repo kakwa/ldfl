@@ -24,7 +24,7 @@
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 
-// Define bitmask flags for operation types using 64-bit values
+// Bitmask flags for operation types
 typedef enum {
     LDFL_OP_NOOP     = 0ULL,      // No operation
     LDFL_OP_MAP      = 1ULL << 0, // Map operation
@@ -71,7 +71,7 @@ void ldfl_none_logger(int priority, const char *fmt, ...) {
     return;
 }
 
-// Default logger implementation (to stderr)
+// log to stderr logger
 void ldfl_stderr_logger(int priority, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
@@ -92,29 +92,19 @@ void ldfl_stderr_logger(int priority, const char *fmt, ...) {
     va_end(args);
 }
 
+// Syslog logger
 void ldfl_syslog_logger(int priority, const char *fmt, ...) {
     if (priority > ldfl_setting.log_level)
         return;
 
-    // build the out log message
-    // TODO vsyslog
-    FILE  *stream;
-    char  *out;
-    size_t len;
-    stream = open_memstream(&out, &len);
     va_list args;
     va_start(args, fmt);
-    vfprintf(stream, fmt, args);
+    vsyslog(priority, fmt, args);
     va_end(args);
-    fflush(stream);
-    fclose(stream);
-    syslog(priority, "%s", out);
-    // FIXME work around to avoid weird crashes
-    // needs to be investigated
     closelog();
-    free(out);
 }
 
+// Render Nullable array (for logging things like argv or envp)
 char *ldfl_render_nullable_array(char *const list[]) {
     if (!list)
         return strdup("[]");
@@ -157,6 +147,7 @@ char *ldfl_render_nullable_array(char *const list[]) {
     return result;
 }
 
+// Global var for compiled regexp
 compiled_mapping_t *ldfl_compiled_rules;
 
 // TODO remove
@@ -167,6 +158,7 @@ compiled_mapping_t *ldfl_compiled_rules;
 #include "../cfg/ldfl-config.h"
 #endif
 
+// Count the number of rules
 uint64_t ldfl_get_rule_count() {
     uint64_t i = 0;
     while (ldfl_mapping[i].operation != LDFL_OP_END)
@@ -174,6 +166,7 @@ uint64_t ldfl_get_rule_count() {
     return i;
 }
 
+// Regex compilation
 void ldfl_regex_init() {
     ldfl_rule_count = ldfl_get_rule_count();
 
@@ -201,6 +194,7 @@ void ldfl_regex_init() {
     }
 }
 
+// Free compiled regex data
 void ldfl_regex_free() {
     for (int i = 0; i < ldfl_rule_count; i++) {
         pcre2_code_free(ldfl_compiled_rules[i].matching_regex);
@@ -208,6 +202,8 @@ void ldfl_regex_free() {
     free(ldfl_compiled_rules);
 }
 
+// Macro used for testing
+// this permits to test the utils function without enabling the libc wrappers.
 #ifndef LDLF_UTILS_TESTING
 
 #define REAL(f)                                                                                                        \
@@ -220,7 +216,11 @@ void ldfl_regex_free() {
         ldfl_init();                                                                                                   \
     };
 
+// Flag to check if ldfl is properly initialized
+// FIXME concurrency issue, add some locking when doing the init
 bool ldfl_is_init;
+
+// libc functions doing the real job
 int (*real_openat)(int dirfd, const char *pathname, int flags, mode_t mode);
 FILE *(*real_fopen)(const char *filename, const char *mode);
 FILE *(*real_fopen64)(const char *filename, const char *mode);
@@ -277,6 +277,9 @@ int (*real_renamex_np)(const char *oldpath, const char *newpath, int flags);
 int (*real_renameatx_np)(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags);
 #endif
 
+// init function
+// dlsym the real libc functions & compile the matching regex
+// FIXME concurrency issue
 static void __attribute__((constructor(101))) ldfl_init() {
     ldfl_setting.logger(LOG_DEBUG, "ld-fliar init called");
     ldfl_regex_init();
@@ -339,6 +342,8 @@ static void __attribute__((constructor(101))) ldfl_init() {
     ldfl_setting.logger(LOG_DEBUG, "initialized");
 }
 
+// de-init function
+// free compiled regexp
 static void __attribute__((destructor(101))) ldfl_dinit() {
     ldfl_setting.logger(LOG_DEBUG, "ld-fliar dinit called");
     ldfl_regex_free();
@@ -497,29 +502,24 @@ int execve(const char *filename, char *const argv[], char *const envp[]) {
     return real_execve(filename, argv, envp);
 }
 
-// Wrapper function for execl with logging
 int execl(const char *path, const char *arg, ...) {
     va_list args;
     va_start(args, arg);
     ldfl_setting.logger(LOG_DEBUG, "execl called: path=%s, arg=%s", path, arg);
-    // Log additional arguments if needed
     va_end(args);
     RINIT;
     return real_execl(path, arg);
 }
 
-// Wrapper function for execlp with logging
 int execlp(const char *file, const char *arg, ...) {
     va_list args;
     va_start(args, arg);
     ldfl_setting.logger(LOG_DEBUG, "execlp called: file=%s, arg=%s", file, arg);
-    // Log additional arguments if needed
     va_end(args);
     RINIT;
     return real_execlp(file, arg);
 }
 
-// Wrapper function for execv with logging
 int execv(const char *path, char *const argv[]) {
     char *argv_str = ldfl_render_nullable_array(argv);
     ldfl_setting.logger(LOG_DEBUG, "execv called: path=%s, argv=%s", path, argv_str);
@@ -528,7 +528,6 @@ int execv(const char *path, char *const argv[]) {
     return real_execv(path, argv);
 }
 
-// Wrapper function for execvp with logging
 int execvp(const char *file, char *const argv[]) {
     char *argv_str = ldfl_render_nullable_array(argv);
     ldfl_setting.logger(LOG_DEBUG, "execvp called: file=%s, argv=%s", file, argv_str);
