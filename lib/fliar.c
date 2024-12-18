@@ -178,6 +178,76 @@ compiled_mapping_t *ldfl_compiled_rules;
 #include "../cfg/ldfl-config.h"
 #endif
 
+#define LDFL_MAX_ARGS 8 // Limit to a maximum of 8 arguments for simplicity
+
+// Generic macro for wrapping variadic calls, limited to 8 arguments and only for NULL terminated list of strings
+#define ldfl_variadic_str_wrap(target_func, nvarg, ...)                                                                \
+    void   *_arg;                                                                                                      \
+    void   *_args[LDFL_MAX_ARGS] = {0};                                                                                \
+    int     _arg_count           = 0;                                                                                  \
+    va_list va_list_name;                                                                                              \
+    va_start(va_list_name, nvarg);                                                                                     \
+    _arg = va_arg(va_list_name, void *);                                                                               \
+                                                                                                                       \
+    /* Extract arguments into the array */                                                                             \
+    while (_arg != NULL) {                                                                                             \
+        _args[_arg_count++] = _arg;                                                                                    \
+        _arg                = va_arg(va_list_name, void *);                                                            \
+    }                                                                                                                  \
+    va_end(va_list_name);                                                                                              \
+                                                                                                                       \
+    ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_CRIT, "call '%s', variadic arg count too high: %d (limit: 8)",           \
+                        #target_func, _arg_count);                                                                     \
+    /* Call the target function based on the argument count */                                                         \
+    int ret;                                                                                                           \
+    switch (_arg_count) {                                                                                              \
+    case 0:                                                                                                            \
+        ret = target_func(__VA_ARGS__, NULL);                                                                          \
+        break;                                                                                                         \
+    case 1:                                                                                                            \
+        ret = target_func(__VA_ARGS__, _args[0], NULL);                                                                \
+        break;                                                                                                         \
+    case 2:                                                                                                            \
+        ret = target_func(__VA_ARGS__, _args[0], _args[1], NULL);                                                      \
+        break;                                                                                                         \
+    case 3:                                                                                                            \
+        ret = target_func(__VA_ARGS__, _args[0], _args[1], _args[2], NULL);                                            \
+        break;                                                                                                         \
+    case 4:                                                                                                            \
+        ret = target_func(__VA_ARGS__, _args[0], _args[1], _args[2], _args[3], NULL);                                  \
+        break;                                                                                                         \
+    case 5:                                                                                                            \
+        ret = target_func(__VA_ARGS__, _args[0], _args[1], _args[2], _args[3], _args[4], NULL);                        \
+        break;                                                                                                         \
+    case 6:                                                                                                            \
+        ret = target_func(__VA_ARGS__, _args[0], _args[1], _args[2], _args[3], _args[4], _args[5], NULL);              \
+        break;                                                                                                         \
+    case 7:                                                                                                            \
+        ret = target_func(__VA_ARGS__, _args[0], _args[1], _args[2], _args[3], _args[4], _args[5], _args[6], NULL);    \
+        break;                                                                                                         \
+    case 8:                                                                                                            \
+        ret = target_func(__VA_ARGS__, _args[0], _args[1], _args[2], _args[3], _args[4], _args[5], _args[6], _args[7], \
+                          NULL);                                                                                       \
+        break;                                                                                                         \
+    default:                                                                                                           \
+        ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_CRIT, "call '%s', variadic arg count too high: %d (limit: 8)",       \
+                            #target_func, _arg_count);                                                                 \
+        ret = -1; /* Too many arguments */                                                                             \
+    }
+
+#define ldfl_variadic_mode_wrap(target_func, ...)                                                                      \
+    int     ret;                                                                                                       \
+    va_list _args;                                                                                                     \
+    mode_t  mode = 0;                                                                                                  \
+    if ((flags & O_CREAT) || (flags & O_TMPFILE)) {                                                                    \
+        va_start(_args, flags);                                                                                        \
+        mode = va_arg(_args, mode_t);                                                                                  \
+        va_end(_args);                                                                                                 \
+        ret = target_func(__VA_ARGS__, mode);                                                                          \
+    } else {                                                                                                           \
+        ret = target_func(__VA_ARGS__);                                                                                \
+    }
+
 // Count the number of rules
 uint64_t ldfl_get_rule_count() {
     uint64_t i = 0;
@@ -553,9 +623,7 @@ int openat(int dirfd, const char *pathname, int flags, ...) {
     }
     pcre2_match_data_free(return_pcre_match);
     va_end(args);
-    va_start(args, flags);
-    int ret = real_openat(dirfd, pathname, flags, args);
-    va_end(args);
+    ldfl_variadic_mode_wrap(real_openat, dirfd, pathname, flags);
     return ret;
 }
 
@@ -575,9 +643,7 @@ int open(const char *pathname, int flags, ... /* mode_t mode */) {
     pcre2_match_data_free(return_pcre_match);
 
     va_end(args);
-    va_start(args, flags);
-    int ret = real_open(pathname, flags, args);
-    va_end(args);
+    ldfl_variadic_mode_wrap(real_open, pathname, flags);
     return ret;
 }
 
@@ -597,9 +663,7 @@ int open64(const char *pathname, int flags, ... /* mode_t mode */) {
     pcre2_match_data_free(return_pcre_match);
 
     va_end(args);
-    va_start(args, flags);
-    int ret = real_open64(pathname, flags, args);
-    va_end(args);
+    ldfl_variadic_mode_wrap(real_open64, pathname, flags);
     return ret;
 }
 
@@ -619,9 +683,7 @@ int openat64(int dirfd, const char *pathname, int flags, ... /* mode_t mode */) 
     pcre2_match_data_free(return_pcre_match);
 
     va_end(args);
-    va_start(args, flags);
-    int ret = real_openat64(dirfd, pathname, flags, args);
-    va_end(args);
+    ldfl_variadic_mode_wrap(real_openat64, dirfd, pathname, flags);
     return ret;
 }
 
@@ -846,7 +908,6 @@ int execl(const char *pathname, const char *arg, ...) {
     va_list  args;
     va_start(args, arg);
     ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG, "execl called: pathname=%s, arg=%s", pathname, arg);
-    va_end(args);
     RINIT;
     compiled_mapping_t return_rule;
     pcre2_match_data  *return_pcre_match = NULL;
@@ -855,7 +916,9 @@ int execl(const char *pathname, const char *arg, ...) {
     pcre2_match_data_free(return_pcre_match);
     // TODO argv[0]
 
-    return real_execl(pathname, arg);
+    va_end(args);
+    ldfl_variadic_str_wrap(real_execl, arg, pathname, arg);
+    return ret;
 }
 
 int execlp(const char *file, const char *arg, ...) {
@@ -872,7 +935,8 @@ int execlp(const char *file, const char *arg, ...) {
     pcre2_match_data_free(return_pcre_match);
     // TODO argv[0]
 
-    return real_execlp(file, arg);
+    ldfl_variadic_str_wrap(real_execlp, arg, file, arg);
+    return ret;
 }
 
 int execv(const char *pathname, char *const argv[]) {
