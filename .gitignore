@@ -59,4 +59,7 @@ Makefile
 cmake_install.cmake
 fliar-cli
 fliar-test
+fliar-test-mapping
+fliar-test-utils
 Testing/
+coverage/

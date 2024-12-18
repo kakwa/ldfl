@@ -93,17 +93,22 @@ if(BUILD_TESTS)
 
     include(CTest)
     include_directories(./lib ./utils)
-    add_test(NAME fliar-test COMMAND fliar-test)
-    add_executable(fliar-test tests/tests.c)
-    target_link_libraries(fliar-test ${PCRE2_LIBRARY} ${CUNIT_LIBRARY})
+    add_test(NAME fliar-test-utils COMMAND fliar-test-utils)
+    add_executable(fliar-test-utils tests/tests-utils.c)
+    target_link_libraries(fliar-test-utils ${PCRE2_LIBRARY} ${CUNIT_LIBRARY})
+
+    add_test(NAME fliar-test-mapping COMMAND fliar-test-mapping)
+    add_executable(fliar-test-mapping tests/tests-mapping.c)
+    target_link_libraries(fliar-test-mapping ${PCRE2_LIBRARY} ${CUNIT_LIBRARY})
 
     # Add the test target
     add_custom_target(
       tests
-      COMMAND fliar-test
+      COMMAND fliar-test-utils
+      COMMAND fliar-test-mapping
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       COMMENT "Running tests")
-    add_dependencies(tests fliar-test)
+    add_dependencies(tests fliar-test-utils fliar-test-mapping)
 
     if(COVERAGE)
       set(CMAKE_BUILD_TYPE Debug)
@@ -117,9 +122,10 @@ if(BUILD_TESTS)
         -j
         ${n_cores}
         DEPENDENCIES
-        fliar-test)
+        fliar-test-utils
+        fliar-test-mapping)
 
-      add_dependencies(coverage fliar-test)
+      add_dependencies(coverage fliar-test-utils fliar-test-mapping)
     endif(COVERAGE)
 
   else(CUNIT_LIBRARY)

@@ -1,8 +1,8 @@
-#define _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE 1
 #define _POSIX_C_SOURCE 200809L
 #define _BSD_SOURCE
 #define _GNU_SOURCE
-#define _XOPEN_SOURCE 500
+#define _XOPEN_SOURCE 700
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -286,6 +286,7 @@ void ldfl_regex_init() {
 
 // Free compiled regex data
 void ldfl_regex_free() {
+    ldfl_rule_count = 0;
     for (int i = 0; i < ldfl_rule_count; i++) {
         pcre2_code_free(ldfl_compiled_rules[i].matching_regex);
     }
