@@ -33,9 +33,19 @@ ldfl_mapping_t ldfl_mapping[] = {
 or any logger implementing:
 void cust_logger(int priority, const char *fmt, ...) {}
 
+Use log_mask to enable/disable some log categories:
+
+* LDFL_LOG_INIT:            Log initialization
+* LDFL_LOG_FN_CALL:         Log LibC function calls
+* LDFL_LOG_MAPPING_SEARCH:  Log mapping search stuff
+* LDFL_LOG_MAPPING_APPLY:   Log mapping application stuff
+* LDFL_LOG_ALL:             Log everything
+
+Compose them like so: LDFL_LOG_FN_CALL | LDFL_LOG_MAPPING_APPLY
 */
 
 ldfl_setting_t ldfl_setting = {
+    .log_mask    = LDFL_LOG_FN_CALL | LDFL_LOG_INIT,
     .log_level   = LOG_DEBUG,
     .logger      = ldfl_syslog_logger,
 };
