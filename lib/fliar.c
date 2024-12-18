@@ -287,10 +287,10 @@ void ldfl_regex_init() {
 
 // Free compiled regex data
 void ldfl_regex_free() {
-    ldfl_rule_count = 0;
     for (int i = 0; i < ldfl_rule_count; i++) {
         pcre2_code_free(ldfl_compiled_rules[i].matching_regex);
     }
+    ldfl_rule_count = 0;
     free(ldfl_compiled_rules);
 }
 
@@ -324,7 +324,7 @@ bool ldfl_find_matching_rule(const char *call, const char *pathname, uint64_t ma
             ldfl_setting.logger(LDFL_LOG_MAPPING_SEARCH, LOG_INFO,
                                 "rule[%s] match pathname '%s', selected for call '%s'", ldfl_mapping[i].name, pathname,
                                 call);
-            return_pcre_match = &match_data;
+            *return_pcre_match = match_data;
             return_rule       = &ldfl_compiled_rules[i];
             return true;
         } else {
