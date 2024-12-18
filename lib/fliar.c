@@ -119,9 +119,10 @@ void ldfl_syslog_logger(uint64_t mask, int priority, const char *fmt, ...) {
 
     va_list args;
     va_start(args, fmt);
+    openlog(NULL, LOG_PID, LOG_USER);
     vsyslog(priority, fmt, args);
-    va_end(args);
     closelog();
+    va_end(args);
 }
 
 // Render Nullable array (for logging things like argv or envp)
@@ -1341,7 +1342,7 @@ int renameatx_np(int olddirfd, const char *oldpath, int newdirfd, const char *ne
     }
     pcre2_match_data_free(return_pcre_match);
     // TODO newpath
-    //
+
     return real_renameatx_np(olddirfd, oldpath, newdirfd, newpath, flags);
 }
 #endif
