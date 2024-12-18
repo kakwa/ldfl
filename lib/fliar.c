@@ -295,6 +295,9 @@ void ldfl_regex_free() {
 
 bool ldfl_find_matching_rule(const char *call, const char *pathname, uint64_t mask, compiled_mapping_t *return_rule,
                              pcre2_match_data **return_pcre_match) {
+    if (pathname == NULL) {
+        return false;
+    }
     for (int i = 0; i < ldfl_rule_count; i++) {
         ldfl_setting.logger(LDFL_LOG_MAPPING_SEARCH, LOG_DEBUG, "rule[%s] not relevant for call '%s', skipping",
                             ldfl_mapping[i].name, call);
