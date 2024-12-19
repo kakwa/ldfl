@@ -1,15 +1,16 @@
 ldfl_mapping_t ldfl_mapping[] = {
     /* name                   search_pattern          operation         target                extra_options         */
-    { "temporary redirect",   ".*/temp/\\([^/]*\\)$", LDFL_OP_MAP,      "/tmp/\\1",           NULL},
-    { "executable redirect",  ".*/.bin/\\([^/]*\\)$", LDFL_OP_EXEC_MAP, "/opt/fliar/bin/\\1", NULL},
-    { "memory open",          ".*/file[0-9].txt",     LDFL_OP_MEM_OPEN, NULL,                 NULL},
-    { "static file",          ".*/static.bin",        LDFL_OP_STATIC,   ldf_default_blob,     NULL},
-    { "change perm/owner",    ".*/data/.*",           LDFL_OP_PERM,     NULL,                 "kakwa:kakwa|0700|0600"},
-    { "allow & do nothing 1", "^/dev.*",              LDFL_OP_NOOP,     NULL,                 NULL},
-    { "allow & do nothing 2", "^/proc.*",             LDFL_OP_NOOP,     NULL,                 NULL},
-    { "allow & do nothing 3", "^/sys.*",              LDFL_OP_NOOP,     NULL,                 NULL},
-    { "default & deny",       ".*",                   LDFL_OP_DENY,     NULL,                 NULL},
-    { NULL,                   NULL,                   LDFL_OP_END,      NULL,                 NULL} // keep this last value
+    { "temp files redirect",  ".*/temp/\\([^/]*\\)$", LDFL_OP_MAP,      "/tmp/\\1",           NULL                   },
+    { "executable redirect",  ".*/.bin/\\([^/]*\\)$", LDFL_OP_EXEC_MAP, "/opt/fliar/bin/\\1", NULL                   },
+    { "memory open",          ".*/file[0-9].txt",     LDFL_OP_MEM_OPEN, NULL,                 NULL                   },
+    { "static file",          ".*/static.bin",        LDFL_OP_STATIC,   ldf_default_blob,     NULL                   },
+    { "change data perm",     ".*/data/.*",           LDFL_OP_PERM,     NULL,                 "kakwa:kakwa|0700|0600"},
+    { "change data location", NULL,                   LDFL_OP_MAP,      NULL,                 NULL                   }, // Also applies this rule on pattern ".*/data/.*"
+    { "allow /dev",           "^/dev/.*",             LDFL_OP_NOOP,     NULL,                 NULL                   },
+    { "allow /proc",          "^/proc/.*",            LDFL_OP_NOOP,     NULL,                 NULL                   },
+    { "allow /sys",           "^/sys/.*",             LDFL_OP_NOOP,     NULL,                 NULL                   },
+    { "default & deny",       ".*",                   LDFL_OP_DENY,     NULL,                 NULL                   },
+    { NULL,                   NULL,                   LDFL_OP_END,      NULL,                 NULL                   }  // keep this last value
 };
 
 

@@ -63,3 +63,8 @@ fliar-test-mapping
 fliar-test-utils
 Testing/
 coverage/
+CMakeDoxyfile.in
+CMakeDoxygenDefaults.cmake
+Doxyfile
+docs/doxygen-awesome-css/
+docs/html/

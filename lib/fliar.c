@@ -1,3 +1,4 @@
+/** @cond */
 #define _DEFAULT_SOURCE 1
 #define _POSIX_C_SOURCE 200809L
 #define _BSD_SOURCE
@@ -29,46 +30,106 @@
 #define PCRE2_CODE_UNIT_WIDTH 8
 #endif
 #include <pcre2.h>
+/** @endcond */
 
-// Bitmask flags for operation types
+/**
+ * @file
+ * @brief Structures of interest in fliar.c
+ */
+
+/**
+ * @enum ldfl_log_category_t
+ * @brief Bitmask flags for specifying logging categories.
+ *
+ * This enumeration defines flags used to control the logging behavior
+ * of the ld-fliar. Each flag represents a specific category of operations
+ * to be logged, and they can be combined using bitwise OR operations.
+ */
 typedef enum {
-    LDFL_LOG_FN_CALL        = 1ULL << 0, // Log LibC function calls
-    LDFL_LOG_MAPPING_SEARCH = 1ULL << 1, // Log mapping search stuff
-    LDFL_LOG_MAPPING_APPLY  = 1ULL << 2, // Log mapping application stuff
-    LDFL_LOG_INIT           = 1ULL << 3, // Log for (de)initialization
-    LDFL_LOG_ALL            = ~0ULL,     // Log everything
+    LDFL_LOG_FN_CALL        = 1ULL << 0, /**< Log LibC function calls. */
+    LDFL_LOG_MAPPING_SEARCH = 1ULL << 1, /**< Log mapping search operations. */
+    LDFL_LOG_MAPPING_APPLY  = 1ULL << 2, /**< Log mapping application operations. */
+    LDFL_LOG_INIT           = 1ULL << 3, /**< Log initialization and deinitialization operations. */
+    LDFL_LOG_ALL            = ~0ULL      /**< Log all categories. */
 } ldfl_log_category_t;
 
-// Bitmask flags for operation types
+/**
+ * @enum ldfl_operation_t
+ * @brief enum for the type of operations
+ */
 typedef enum {
-    LDFL_OP_NOOP     = 1ULL << 0, // No operation
-    LDFL_OP_MAP      = 1ULL << 1, // Map operation
-    LDFL_OP_EXEC_MAP = 1ULL << 2, // Executable map
-    LDFL_OP_MEM_OPEN = 1ULL << 3, // Memory open
-    LDFL_OP_STATIC   = 1ULL << 4, // Static file
-    LDFL_OP_PERM     = 1ULL << 5, // Change permissions/ownership
-    LDFL_OP_DENY     = 1ULL << 6, // Deny access
-    LDFL_OP_END      = 0ULL       // End marker
+    LDFL_OP_NOOP     = 1ULL << 0, /**< No operation. */
+    LDFL_OP_MAP      = 1ULL << 1, /**< Map operation. */
+    LDFL_OP_EXEC_MAP = 1ULL << 2, /**< Executable map. */
+    LDFL_OP_MEM_OPEN = 1ULL << 3, /**< Memory open. */
+    LDFL_OP_STATIC   = 1ULL << 4, /**< Static file operation. */
+    LDFL_OP_PERM     = 1ULL << 5, /**< Change permissions/ownership, use extra_option "user|group|0600|0700" */
+    LDFL_OP_DENY     = 1ULL << 6, /**< Deny access. */
+    LDFL_OP_RO       = 1ULL << 7, /**< Restrict to Read Only access. */
+    LDFL_OP_END      = 0ULL       /**< End marker. */
 } ldfl_operation_t;
 
-// Structure for a single mapping entry
+/**
+ * @file
+ * @brief Defines the structure for a single mapping entry.
+ */
+
+/**
+ * @struct ldfl_mapping_t
+ * @brief Represents a single file mapping entry.
+ *
+ * This structure defines a mapping rule, including the name, matching pattern,
+ * operation type, target resource, and additional options.
+ *
+ * @note The array of `ldfl_mapping_t` structures should be terminated with an entry
+ * where `name` is `NULL` and `operation` is `LDFL_OP_END`. This sentinel entry is used
+ * to mark the end of the array.
+ *
+ * @example
+ * ldfl_mapping_t mappings[] = {
+ *     {"mapping1", "pattern1", LDFL_OP_MAP,  "target1",  NULL},
+ *     {"mapping2", "pattern2", LDFL_OP_PERM, "target2", "kakwa:kakwa|0700|0600"},
+ *     {NULL, NULL, LDFL_OP_END, NULL, NULL}  // Terminating entry
+ * };
+ */
 typedef struct {
-    const char      *name;           // Name of the mapping rule
-    const char      *search_pattern; // Regex or pattern for the match
-    ldfl_operation_t operation;      // Operation type (64-bit bitmask)
-    const void      *target;         // Target resource (e.g., file pathname or blob pointer)
-    const char      *extra_options;  // Additional options as a string
+    const char      *name;           /**< Name of the mapping rule. Only informational */
+    const char      *search_pattern; /**< Matching regex on file/dir path. set to NULL to chain */
+    ldfl_operation_t operation;      /**< Operation type. */
+    const void      *target;         /**< Replacement regex for the file/dir path. */
+    const char      *extra_options;  /**< Extra options options. */
 } ldfl_mapping_t;
 
-// Variadic logger function type
+/**
+ * @brief Variadic logger function type.
+ *
+ * This function type is used for logging messages in fliar.
+ * Implement this signature if you want your own logger
+ *
+ * @param mask Logging category bitmask (see ldfl_log_category_t).
+ * @param priority Priority level of the log message.
+ * @param fmt Format string for the log message (like sprintf).
+ * @param ... Variadic arguments for the format string.
+ *
+ * @note Default loggers implementing this interface:
+ * - `ldfl_dummy_logger`: A no-op logger that discards all messages.
+ * - `ldfl_stderr_logger`: Logs messages to standard error (stderr).
+ * - `ldfl_syslog_logger`: Logs messages to the system log (syslog).
+ */
 typedef void (*ldfl_logger_t)(uint64_t mask, int priority, const char *fmt, ...);
 
-// Structure for settings
+/**
+ * @struct ldfl_setting_t
+ * @brief Represents the general settings.
+ *
+ */
 typedef struct {
-    int           log_level; // Log level (e.g., "debug", "info")
-    ldfl_logger_t logger;    // Variadic logger function pointer
-    uint64_t      log_mask;  // Log categories enabled
+    int           log_level; /**< Log level. As define in 'man syslog' (ex: LOG_ERR) */
+    ldfl_logger_t logger;    /**< Variadic logger function pointer. */
+    uint64_t      log_mask;  /**< Bitmask of log categories enabled. */
 } ldfl_setting_t;
+
+/** @cond */
 
 // Wrapper struct to store compiled regex
 typedef struct {
@@ -325,7 +386,7 @@ bool ldfl_find_matching_rule(const char *call, const char *pathname, uint64_t ma
                                 "rule[%s] match pathname '%s', selected for call '%s'", ldfl_mapping[i].name, pathname,
                                 call);
             *return_pcre_match = match_data;
-            return_rule       = &ldfl_compiled_rules[i];
+            return_rule        = &ldfl_compiled_rules[i];
             return true;
         } else {
             ldfl_setting.logger(LDFL_LOG_MAPPING_SEARCH, LOG_DEBUG, "rule[%s] not matching pathname '%s' for call '%s'",
@@ -1348,3 +1409,4 @@ int renameatx_np(int olddirfd, const char *oldpath, int newdirfd, const char *ne
 #endif
 
 #endif
+/** @endcond */
