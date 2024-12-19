@@ -5,7 +5,7 @@ ldfl_mapping_t ldfl_mapping[] = {
     { "memory open",          ".*/file[0-9].txt",     LDFL_OP_MEM_OPEN, NULL,                 NULL                   },
     { "static file",          ".*/static.bin",        LDFL_OP_STATIC,   ldf_default_blob,     NULL                   },
     { "change data perm",     ".*/data/.*",           LDFL_OP_PERM,     NULL,                 "kakwa:kakwa|0700|0600"},
-    { "change data location", NULL,                   LDFL_OP_MAP,      NULL,                 NULL                   }, // Also applies this rule on pattern ".*/data/.*"
+//    { "change data location", NULL,                   LDFL_OP_MAP,      NULL,                 NULL                   }, // Also applies this rule on pattern ".*/data/.*"
     { "allow /dev",           "^/dev/.*",             LDFL_OP_NOOP,     NULL,                 NULL                   },
     { "allow /proc",          "^/proc/.*",            LDFL_OP_NOOP,     NULL,                 NULL                   },
     { "allow /sys",           "^/sys/.*",             LDFL_OP_NOOP,     NULL,                 NULL                   },
