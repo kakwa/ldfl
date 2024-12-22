@@ -331,6 +331,10 @@ void ldfl_regex_init() {
 
     ldfl_compiled_rules = calloc(sizeof(compiled_mapping_t), ldfl_rule_count);
     for (int i = 0; i < ldfl_rule_count; i++) {
+        ldfl_compiled_rules[i].mapping = &ldfl_mapping[i];
+        if (ldfl_mapping[i].search_pattern == NULL) {
+            continue;
+        }
         pcre2_code *re;
         PCRE2_SPTR  pattern_ptr = (PCRE2_SPTR)ldfl_mapping[i].search_pattern;
 
@@ -348,7 +352,6 @@ void ldfl_regex_init() {
             assert(re);
         }
 
-        ldfl_compiled_rules[i].mapping        = &ldfl_mapping[i];
         ldfl_compiled_rules[i].matching_regex = re;
     }
 }
@@ -371,7 +374,7 @@ bool ldfl_find_matching_rule(const char *call, const char *pathname, uint64_t ma
         ldfl_setting.logger(LDFL_LOG_MAPPING_SEARCH, LOG_DEBUG, "rule[%s] not relevant for call '%s', skipping",
                             ldfl_mapping[i].name, call);
         // Rule not matching
-        if (!(ldfl_compiled_rules[i].mapping->operation & mask)) {
+        if (!(ldfl_compiled_rules[i].mapping->operation & mask) || (ldfl_compiled_rules[i].matching_regex == NULL)) {
             ldfl_setting.logger(LDFL_LOG_MAPPING_SEARCH, LOG_DEBUG, "rule[%s] not relevant for call '%s', skipping",
                                 ldfl_mapping[i].name, call);
             continue;
