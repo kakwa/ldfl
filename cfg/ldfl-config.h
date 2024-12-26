@@ -1,6 +1,7 @@
 ldfl_mapping_t ldfl_mapping[] = {
     /* name                   search_pattern          operation         target                extra_options         */
-    { "temp files redirect",  ".*/temp/\\([^/]*\\)$", LDFL_OP_MAP,      "/tmp/\\1",           NULL                   },
+    { "temp files redirect",  ".*/temp/([^/]*)$",     LDFL_OP_MAP,      "/tmp/$1",            NULL                   },
+    { "inc redirect",         "(.*)/inc",             LDFL_OP_MAP,      "$1/lib",             NULL                   },
     { "executable redirect",  ".*/.bin/\\([^/]*\\)$", LDFL_OP_EXEC_MAP, "/opt/fliar/bin/\\1", NULL                   },
     { "memory open",          ".*/file[0-9].txt",     LDFL_OP_MEM_OPEN, NULL,                 NULL                   },
     { "static file",          ".*/static.bin",        LDFL_OP_STATIC,   ldf_default_blob,     NULL                   },
@@ -46,7 +47,7 @@ Compose them like so: LDFL_LOG_FN_CALL | LDFL_LOG_MAPPING_APPLY
 */
 
 ldfl_setting_t ldfl_setting = {
-    .log_mask    = LDFL_LOG_FN_CALL | LDFL_LOG_INIT,
+    .log_mask    = LDFL_LOG_ALL,
     .log_level   = LOG_DEBUG,
     .logger      = ldfl_syslog_logger,
 };

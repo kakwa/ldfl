@@ -371,8 +371,6 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t m
         return false;
     }
     for (int i = 0; i < ldfl_rule_count; i++) {
-        ldfl_setting.logger(LDFL_LOG_MAPPING_SEARCH, LOG_DEBUG, "rule[%s] not relevant for call '%s', skipping",
-                            ldfl_mapping[i].name, call);
         // Rule not matching
         if (!(ldfl_compiled_rules[i].mapping->operation & mask) || (ldfl_compiled_rules[i].matching_regex == NULL)) {
             ldfl_setting.logger(LDFL_LOG_MAPPING_SEARCH, LOG_DEBUG, "rule[%s] not relevant for call '%s', skipping",
@@ -391,7 +389,7 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t m
                              match_data,                            // Match data structure
                              NULL                                   // Default match context
         );
-        if (!rc) {
+        if (rc <= 0) {
             ldfl_setting.logger(LDFL_LOG_MAPPING_SEARCH, LOG_DEBUG, "rule[%s] not matching pathname '%s' for call '%s'",
                                 ldfl_mapping[i].name, pathname, call);
             pcre2_match_data_free(match_data);
@@ -483,10 +481,6 @@ char *ldfl_fullpath(int dirfd, const char *pathname) {
 
 void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_match_data *match_group,
                       const char *pathname_in, char **pathname_out) {
-    *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
-    stpcpy(*pathname_out, pathname_in);
-    return;
-
     for (int i = 0; i < num_rules; i++) {
         switch (mapping_rules[i].mapping->operation) {
         case LDFL_OP_NOOP:
@@ -494,23 +488,53 @@ void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_ma
             stpcpy(*pathname_out, pathname_in);
             break;
         case LDFL_OP_MAP:
+            // Extract the target replacement pattern.
+            char      *new_pathname    = calloc(sizeof(char), PATH_MAX);
+            PCRE2_SIZE replacement_len = PATH_MAX;
+
+            // Perform the substitution and store the result.
+            pcre2_substitute(mapping_rules[i].matching_regex, (PCRE2_SPTR)pathname_in, PCRE2_ZERO_TERMINATED, 0,
+                             PCRE2_SUBSTITUTE_GLOBAL, match_group, NULL, (PCRE2_SPTR)mapping_rules[i].mapping->target,
+                             PCRE2_ZERO_TERMINATED, (PCRE2_UCHAR *)new_pathname, &replacement_len);
+            if (replacement_len <= 0) {
+                ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_WARNING,
+                                    "Replacement in path failed for rule '%s' on path '%s'",
+                                    mapping_rules[i].mapping->name, pathname_in);
+            }
+            *pathname_out = new_pathname;
+
+            ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_DEBUG,
+                                "LDFL_OP_MAP Rule [%s] applied, path '%s' rewritten to '%s'",
+                                mapping_rules[i].mapping->name, pathname_in, *pathname_out);
             break;
         case LDFL_OP_EXEC_MAP:
             ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_WARNING, "Operation LDFL_OP_EXEC_MAP not yet handle");
+            *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
+            stpcpy(*pathname_out, pathname_in);
             break;
         case LDFL_OP_MEM_OPEN:
+            *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
+            stpcpy(*pathname_out, pathname_in);
             ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_WARNING, "Operation LDFL_OP_MEM_OPEN not yet handle");
             break;
         case LDFL_OP_STATIC:
+            *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
+            stpcpy(*pathname_out, pathname_in);
             ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_WARNING, "Operation LDFL_OP_STATIC not yet handle");
             break;
         case LDFL_OP_PERM:
+            *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
+            stpcpy(*pathname_out, pathname_in);
             ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_WARNING, "Operation LDFL_OP_PERM not yet handle");
             break;
         case LDFL_OP_DENY:
+            *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
+            stpcpy(*pathname_out, pathname_in);
             ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_WARNING, "Operation LDFL_OP_DENY not yet handle");
             break;
         default:
+            *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
+            stpcpy(*pathname_out, pathname_in);
             ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_WARNING, "Unknown operation %d not yet handle",
                                 mapping_rules[i].mapping->operation);
         }
