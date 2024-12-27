@@ -1,7 +1,7 @@
 ldfl_mapping_t ldfl_mapping[] = {
     /* name                   search_pattern          operation         target                extra_options         */
     { "temp files redirect",  ".*/temp/([^/]*)$",     LDFL_OP_MAP,      "/tmp/$1",            NULL                   },
-    { "inc redirect",         "(.*)/inc",             LDFL_OP_MAP,      "$1/lib",             NULL                   },
+    { "inc redirect",         "(.*)/inc/(.*)",        LDFL_OP_MAP,      "$1/lib/$2",          NULL                   },
     { "executable redirect",  ".*/.bin/\\([^/]*\\)$", LDFL_OP_EXEC_MAP, "/opt/fliar/bin/\\1", NULL                   },
     { "memory open",          ".*/file[0-9].txt",     LDFL_OP_MEM_OPEN, NULL,                 NULL                   },
     { "static file",          ".*/static.bin",        LDFL_OP_STATIC,   ldf_default_blob,     NULL                   },
