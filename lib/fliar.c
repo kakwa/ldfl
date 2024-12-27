@@ -721,7 +721,9 @@ FILE *fopen(const char *restrict pathname, const char *restrict mode) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     FILE *ret = real_fopen(reworked_path, mode);
     free(reworked_path);
@@ -740,7 +742,9 @@ FILE *fopen64(const char *pathname, const char *mode) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     FILE *ret = real_fopen64(reworked_path, mode);
     free(reworked_path);
@@ -787,7 +791,9 @@ int open(const char *pathname, int flags, ... /* mode_t mode */) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     va_end(args);
     int ret = ldfl_variadic_mode_wrap(real_open, reworked_path, flags);
@@ -812,7 +818,9 @@ int open64(const char *pathname, int flags, ... /* mode_t mode */) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     va_end(args);
     int ret = ldfl_variadic_mode_wrap(real_open64, reworked_path, flags);
@@ -837,7 +845,9 @@ int openat64(int dirfd, const char *pathname, int flags, ... /* mode_t mode */) 
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     va_end(args);
     int ret = ldfl_variadic_mode_wrap(real_openat64, dirfd, reworked_path, flags);
@@ -857,7 +867,9 @@ int rename(const char *oldpath, const char *newpath) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
     // TODO newpath
     int ret = real_rename(reworked_path, newpath);
     free(reworked_path);
@@ -879,7 +891,9 @@ int renameat2(int olddirfd, const char *oldpath, int newdirfd, const char *newpa
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
     // TODO newpath
 
     int ret = real_renameat2(olddirfd, reworked_path, newdirfd, newpath, flags);
@@ -901,7 +915,9 @@ int renameat(int olddirfd, const char *oldpath, int newdirfd, const char *newpat
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
     // TODO newpath
 
     int ret = real_renameat(olddirfd, reworked_path, newdirfd, newpath);
@@ -921,7 +937,9 @@ int unlink(const char *pathname) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_unlink(reworked_path);
     free(reworked_path);
@@ -941,7 +959,9 @@ int unlinkat(int dirfd, const char *pathname, int flags) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_unlinkat(dirfd, reworked_path, flags);
     free(reworked_path);
@@ -961,7 +981,9 @@ int utime(const char *pathname, const struct utimbuf *times) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_utime(reworked_path, times);
     free(reworked_path);
@@ -982,7 +1004,9 @@ int utimes(const char *pathname, const struct timeval times[2]) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_utimes(reworked_path, times);
     free(reworked_path);
@@ -1001,7 +1025,9 @@ int access(const char *pathname, int mode) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_access(reworked_path, mode);
     free(reworked_path);
@@ -1021,7 +1047,9 @@ int fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_fstatat(dirfd, pathname, statbuf, flags);
     free(reworked_path);
@@ -1040,7 +1068,9 @@ int __xstat(int version, const char *pathname, struct stat *statbuf) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real___xstat(version, pathname, statbuf);
     free(reworked_path);
@@ -1059,7 +1089,9 @@ int __xstat64(int version, const char *pathname, struct stat *statbuf) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real___xstat64(version, pathname, statbuf);
     free(reworked_path);
@@ -1078,7 +1110,9 @@ int __lxstat(int version, const char *pathname, struct stat *statbuf) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real___lxstat(version, pathname, statbuf);
     free(reworked_path);
@@ -1098,7 +1132,9 @@ int __fxstatat(int version, int dirfd, const char *pathname, struct stat *statbu
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real___fxstatat(version, dirfd, pathname, statbuf, flags);
     free(reworked_path);
@@ -1119,7 +1155,9 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2], i
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_utimensat(dirfd, pathname, times, flags);
     free(reworked_path);
@@ -1143,7 +1181,9 @@ int execve(const char *pathname, char *const argv[], char *const envp[]) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
     // TODO argv[0]
 
     int ret = real_execve(pathname, argv, envp);
@@ -1165,7 +1205,9 @@ int execl(const char *pathname, const char *arg, ...) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
     // TODO argv[0]
 
     va_end(args);
@@ -1189,7 +1231,9 @@ int execlp(const char *file, const char *arg, ...) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, file, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
     // TODO argv[0]
 
     int ret = ldfl_variadic_str_wrap(real_execlp, arg, reworked_path, arg);
@@ -1211,7 +1255,9 @@ int execv(const char *pathname, char *const argv[]) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
     // TODO argv[0]
 
     int ret = real_execv(pathname, argv);
@@ -1233,7 +1279,9 @@ int execvp(const char *file, char *const argv[]) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, file, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
     // TODO argv[0]
 
     int ret = real_execvp(reworked_path, argv);
@@ -1253,7 +1301,9 @@ DIR *opendir(const char *name) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, name, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     DIR *ret = real_opendir(reworked_path);
     free(reworked_path);
@@ -1272,7 +1322,9 @@ int mkdir(const char *pathname, mode_t mode) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_mkdir(reworked_path, mode);
     free(reworked_path);
@@ -1292,7 +1344,9 @@ int mkdirat(int dirfd, const char *pathname, mode_t mode) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_mkdirat(dirfd, reworked_path, mode);
     free(reworked_path);
@@ -1311,7 +1365,9 @@ int rmdir(const char *pathname) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_rmdir(reworked_path);
     free(reworked_path);
@@ -1330,7 +1386,9 @@ int chdir(const char *pathname) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_chdir(reworked_path);
     free(reworked_path);
@@ -1350,7 +1408,9 @@ int symlink(const char *target, const char *linkpathname) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, target, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
     // TODO target
 
     int ret = real_symlink(reworked_path, linkpathname);
@@ -1370,7 +1430,9 @@ ssize_t readlink(const char *pathname, char *buf, size_t bufsiz) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_readlink(reworked_path, buf, bufsiz);
     free(reworked_path);
@@ -1389,7 +1451,9 @@ int link(const char *oldpath, const char *newpath) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
     // TODO newpath
 
     int ret = real_link(reworked_path, newpath);
@@ -1411,7 +1475,9 @@ int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
     // TODO newpath
 
     int ret = real_linkat(olddirfd, reworked_path, newdirfd, newpath, flags);
@@ -1431,7 +1497,9 @@ int chmod(const char *pathname, mode_t mode) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_chmod(reworked_path, mode);
     free(reworked_path);
@@ -1450,7 +1518,9 @@ int truncate(const char *pathname, off_t length) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_truncate(reworked_path, length);
     free(reworked_path);
@@ -1470,7 +1540,9 @@ int faccessat(int dirfd, const char *pathname, int mode, int flags) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_faccessat(dirfd, reworked_path, mode, flags);
     free(reworked_path);
@@ -1489,7 +1561,9 @@ int stat(const char *pathname, struct stat *statbuf) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_stat(reworked_path, statbuf);
     free(reworked_path);
@@ -1508,7 +1582,9 @@ int lstat(const char *pathname, struct stat *statbuf) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_lstat(reworked_path, statbuf);
     free(reworked_path);
@@ -1529,7 +1605,9 @@ int lchown(const char *pathname, uid_t owner, gid_t group) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_lchown(reworked_path, owner, group);
     free(reworked_path);
@@ -1550,7 +1628,9 @@ int chown(const char *pathname, uid_t owner, gid_t group) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_chown(reworked_path, owner, group);
     free(reworked_path);
@@ -1571,7 +1651,9 @@ int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_fchmodat(dirfd, reworked_path, mode, flags);
     free(reworked_path);
@@ -1592,7 +1674,9 @@ int symlinkat(const char *target, int newdirfd, const char *linkpathname) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, target, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_symlinkat(reworked_path, newdirfd, linkpathname);
     free(reworked_path);
@@ -1612,7 +1696,9 @@ int mkfifo(const char *pathname, mode_t mode) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_mkfifo(reworked_path, mode);
     free(reworked_path);
@@ -1633,7 +1719,9 @@ int mkfifoat(int dirfd, const char *pathname, mode_t mode) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_mkfifoat(dirfd, reworked_path, mode);
     free(reworked_path);
@@ -1654,7 +1742,9 @@ int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_mknodat(dirfd, reworked_path, mode, dev);
     free(reworked_path);
@@ -1675,7 +1765,9 @@ int mknod(const char *pathname, mode_t mode, dev_t dev) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_mknod(reworked_path, mode, dev);
     free(reworked_path);
@@ -1696,7 +1788,9 @@ int statx(int dirfd, const char *restrict pathname, int flags, unsigned int mask
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_statx(dirfd, reworked_path, flags, mask, statxbuf);
     free(reworked_path);
@@ -1716,7 +1810,9 @@ int creat(const char *pathname, mode_t mode) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
 
     int ret = real_creat(reworked_path, mode);
     free(reworked_path);
@@ -1738,7 +1834,9 @@ int renamex_np(const char *oldpath, const char *newpath, int flags) {
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
     // TODO newpath
 
     int ret = real_renamex_np(reworked_path, newpath, flags);
@@ -1760,7 +1858,9 @@ int renameatx_np(int olddirfd, const char *oldpath, int newdirfd, const char *ne
         ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     }
     pcre2_match_data_free(return_pcre_match);
-    free(return_rules);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
     // TODO newpath
 
     int ret = real_renameatx_np(olddirfd, reworked_path, newdirfd, newpath, flags);
