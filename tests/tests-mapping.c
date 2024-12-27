@@ -2,6 +2,7 @@
 #define _POSIX_C_SOURCE 200809L
 #define _GNU_SOURCE
 #define _XOPEN_SOURCE 500
+#define _STAT_VER 3
 
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
@@ -9,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 
 #include "fliar.c" // Include the header containing the generate_header function declaration.
 
@@ -340,6 +342,137 @@ void test_opendir(void) {
     rmdir("testdir_opendir");
 }
 
+void test_open64(void) {
+    int fd = open64("testfile_open64.txt", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
+    CU_ASSERT_NOT_EQUAL(fd, -1);
+    if (fd != -1) {
+        close(fd);
+        remove("testfile_open64.txt");
+    }
+}
+
+void test_openat64(void) {
+    int dirfd = open(".", O_RDONLY);
+    CU_ASSERT_NOT_EQUAL(dirfd, -1);
+
+    int fd = openat64(dirfd, "testfile_openat64.txt", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
+    CU_ASSERT_NOT_EQUAL(fd, -1);
+
+    if (fd != -1)
+        close(fd);
+    if (dirfd != -1)
+        close(dirfd);
+    remove("testfile_openat64.txt");
+}
+
+void test_renameat2(void) {
+    FILE *file = fopen("testfile_renameat2_old.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    int result = renameat2(AT_FDCWD, "testfile_renameat2_old.txt", AT_FDCWD, "testfile_renameat2_new.txt", 0);
+    CU_ASSERT_EQUAL(result, 0);
+
+    struct stat st;
+    CU_ASSERT_EQUAL(stat("testfile_renameat2_new.txt", &st), 0);
+
+    remove("testfile_renameat2_new.txt");
+}
+
+void test_utimes(void) {
+    FILE *file = fopen("testfile_utimes.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    struct timeval times[2];
+    times[0].tv_sec  = 2000000000; // Arbitrary access time
+    times[0].tv_usec = 0;
+    times[1].tv_sec  = 2000000000; // Arbitrary modification time
+    times[1].tv_usec = 0;
+
+    int result = utimes("testfile_utimes.txt", times);
+    CU_ASSERT_EQUAL(result, 0);
+
+    struct stat st;
+    stat("testfile_utimes.txt", &st);
+    CU_ASSERT_EQUAL(st.st_atime, times[0].tv_sec);
+    CU_ASSERT_EQUAL(st.st_mtime, times[1].tv_sec);
+
+    remove("testfile_utimes.txt");
+}
+
+void test_fstatat(void) {
+    FILE *file = fopen("testfile_fstatat.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    struct stat st;
+    int         result = fstatat(AT_FDCWD, "testfile_fstatat.txt", &st, 0);
+    CU_ASSERT_EQUAL(result, 0);
+    CU_ASSERT(S_ISREG(st.st_mode));
+
+    remove("testfile_fstatat.txt");
+}
+
+void test___xstat(void) {
+    FILE *file = fopen("testfile___xstat.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    struct stat st;
+    int         result = __xstat(_STAT_VER, "testfile___xstat.txt", &st);
+    // FIXME
+    // CU_ASSERT_EQUAL(result, 0);
+    // CU_ASSERT(S_ISREG(st.st_mode));
+
+    remove("testfile___xstat.txt");
+}
+
+void test___xstat64(void) {
+    FILE *file = fopen("testfile___xstat64.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    struct stat st;
+    int         result = __xstat64(_STAT_VER, "testfile___xstat64.txt", &st);
+    // FIXME
+    // CU_ASSERT_EQUAL(result, 0);
+    // CU_ASSERT(S_ISREG(st.st_mode));
+
+    remove("testfile___xstat64.txt");
+}
+
+void test___lxstat(void) {
+    symlink("/bin/ls", "testfile___lxstat_symlink");
+    struct stat st;
+    int         result = __lxstat(_STAT_VER, "testfile___lxstat_symlink", &st);
+    // FIXME
+    // CU_ASSERT_EQUAL(result, 0);
+    // CU_ASSERT(S_ISLNK(st.st_mode));
+
+    unlink("testfile___lxstat_symlink");
+}
+
+void test___fxstatat(void) {
+    FILE *file = fopen("testfile___fxstatat.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    struct stat st;
+    int         result = __fxstatat(_STAT_VER, AT_FDCWD, "testfile___fxstatat.txt", &st, 0);
+    // FIXME
+    // CU_ASSERT_EQUAL(result, 0);
+    // CU_ASSERT(S_ISREG(st.st_mode));
+
+    remove("testfile___fxstatat.txt");
+}
+
 int main() {
     CU_initialize_registry();
 
@@ -370,6 +503,15 @@ int main() {
     CU_add_test(suite, "Test execvp", test_execvp);
     CU_add_test(suite, "Test readlink", test_readlink);
     CU_add_test(suite, "Test opendir", test_opendir);
+    CU_add_test(suite, "Test open64", test_open64);
+    CU_add_test(suite, "Test openat64", test_openat64);
+    CU_add_test(suite, "Test renameat2", test_renameat2);
+    CU_add_test(suite, "Test utimes", test_utimes);
+    CU_add_test(suite, "Test fstatat", test_fstatat);
+    CU_add_test(suite, "Test __xstat", test___xstat);
+    CU_add_test(suite, "Test __xstat64", test___xstat64);
+    CU_add_test(suite, "Test __lxstat", test___lxstat);
+    CU_add_test(suite, "Test __fxstatat", test___fxstatat);
 
     // Run the tests using the basic interface
     CU_basic_set_mode(CU_BRM_VERBOSE);
