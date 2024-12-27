@@ -57,13 +57,13 @@ void test_symlink(void) {
 
 void test_statx(void) {
     struct statx buf;
-    int result = statx(AT_FDCWD, "/tmp", 0, 0, &buf);
+    int          result = statx(AT_FDCWD, "/tmp", 0, 0, &buf);
     CU_ASSERT_EQUAL(result, 0);
 }
 
 void test_statx_null_path(void) {
     struct statx buf;
-    int result = statx(AT_FDCWD, NULL, 0, 0, &buf);
+    int          result = statx(AT_FDCWD, NULL, 0, 0, &buf);
     CU_ASSERT_NOT_EQUAL(result, 0);
 }
 

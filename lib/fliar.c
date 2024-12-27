@@ -482,7 +482,7 @@ char *ldfl_fullpath(int dirfd, const char *pathname) {
 void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_match_data *match_group,
                       const char *pathname_in, char **pathname_out) {
     if (pathname_in == NULL) {
-		*pathname_out = NULL;
+        *pathname_out = calloc(sizeof(char), 1);
         return;
     }
     if (num_rules <= 0) {
