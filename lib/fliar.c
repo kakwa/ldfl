@@ -733,9 +733,8 @@ FILE *fopen(const char *restrict pathname, const char *restrict mode) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("fopen", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("fopen", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -754,9 +753,8 @@ FILE *fopen64(const char *pathname, const char *mode) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("fopen64", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("fopen64", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -780,9 +778,8 @@ int openat(int dirfd, const char *pathname, int flags, ...) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("openat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("openat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     va_end(args);
     int ret = ldfl_variadic_mode_wrap(real_openat, dirfd, reworked_path, flags);
@@ -803,9 +800,8 @@ int open(const char *pathname, int flags, ... /* mode_t mode */) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("open", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("open", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -830,9 +826,8 @@ int open64(const char *pathname, int flags, ... /* mode_t mode */) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("open64", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("open64", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -857,9 +852,8 @@ int openat64(int dirfd, const char *pathname, int flags, ... /* mode_t mode */) 
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("openat64", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("openat64", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -879,9 +873,8 @@ int rename(const char *oldpath, const char *newpath) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("rename", oldpath, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
-    }
+    ldfl_find_matching_rules("rename", oldpath, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -903,9 +896,8 @@ int renameat2(int olddirfd, const char *oldpath, int newdirfd, const char *newpa
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("olddirfd", oldpath, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
-    }
+    ldfl_find_matching_rules("olddirfd", oldpath, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -927,9 +919,8 @@ int renameat(int olddirfd, const char *oldpath, int newdirfd, const char *newpat
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("renameat", oldpath, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
-    }
+    ldfl_find_matching_rules("renameat", oldpath, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -949,9 +940,8 @@ int unlink(const char *pathname) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("unlink", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("unlink", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -971,9 +961,8 @@ int unlinkat(int dirfd, const char *pathname, int flags) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("unlinkat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("unlinkat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -993,9 +982,8 @@ int utime(const char *pathname, const struct utimbuf *times) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("utime", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("utime", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1016,9 +1004,8 @@ int utimes(const char *pathname, const struct timeval times[2]) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("utimes", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("utimes", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1037,9 +1024,8 @@ int access(const char *pathname, int mode) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("access", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("access", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1059,9 +1045,8 @@ int fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("fstatat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("fstatat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1080,9 +1065,8 @@ int __xstat(int version, const char *pathname, struct stat *statbuf) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("__xstat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("__xstat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1101,9 +1085,8 @@ int __xstat64(int version, const char *pathname, struct stat *statbuf) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("__xstat64", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("__xstat64", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1122,9 +1105,8 @@ int __lxstat(int version, const char *pathname, struct stat *statbuf) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("__lxstat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("__lxstat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1144,9 +1126,8 @@ int __fxstatat(int version, int dirfd, const char *pathname, struct stat *statbu
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("__fxstatat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("__fxstatat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1167,9 +1148,8 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2], i
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("utimensat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("utimensat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1193,9 +1173,8 @@ int execve(const char *pathname, char *const argv[], char *const envp[]) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("execve", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("execve", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1217,9 +1196,8 @@ int execl(const char *pathname, const char *arg, ...) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("execl", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("execl", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1243,9 +1221,8 @@ int execlp(const char *file, const char *arg, ...) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("execlp", file, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, file, &reworked_path);
-    }
+    ldfl_find_matching_rules("execlp", file, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, file, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1267,9 +1244,8 @@ int execv(const char *pathname, char *const argv[]) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("execv", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("execv", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1291,9 +1267,8 @@ int execvp(const char *file, char *const argv[]) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("execvp", file, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, file, &reworked_path);
-    }
+    ldfl_find_matching_rules("execvp", file, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, file, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1313,9 +1288,8 @@ DIR *opendir(const char *name) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("opendir", name, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, name, &reworked_path);
-    }
+    ldfl_find_matching_rules("opendir", name, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, name, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1334,9 +1308,8 @@ int mkdir(const char *pathname, mode_t mode) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("mkdir", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("mkdir", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1356,9 +1329,8 @@ int mkdirat(int dirfd, const char *pathname, mode_t mode) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("mkdirat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("mkdirat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1377,9 +1349,8 @@ int rmdir(const char *pathname) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("rmdir", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("rmdir", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1398,9 +1369,8 @@ int chdir(const char *pathname) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("chdir", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("chdir", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1420,9 +1390,8 @@ int symlink(const char *target, const char *linkpathname) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("symlink", linkpathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, target, &reworked_path);
-    }
+    ldfl_find_matching_rules("symlink", linkpathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, target, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1442,9 +1411,8 @@ ssize_t readlink(const char *pathname, char *buf, size_t bufsiz) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("readlink", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("readlink", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1463,9 +1431,8 @@ int link(const char *oldpath, const char *newpath) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("link", oldpath, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
-    }
+    ldfl_find_matching_rules("link", oldpath, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1487,9 +1454,8 @@ int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("linkat", oldpath, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
-    }
+    ldfl_find_matching_rules("linkat", oldpath, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1509,9 +1475,8 @@ int chmod(const char *pathname, mode_t mode) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("chmod", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("chmod", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1530,9 +1495,8 @@ int truncate(const char *pathname, off_t length) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("truncate", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("truncate", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1552,9 +1516,8 @@ int faccessat(int dirfd, const char *pathname, int mode, int flags) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("faccessat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("faccessat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1573,9 +1536,8 @@ int stat(const char *pathname, struct stat *statbuf) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("stat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("stat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1594,9 +1556,8 @@ int lstat(const char *pathname, struct stat *statbuf) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("lstat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("lstat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1617,9 +1578,8 @@ int lchown(const char *pathname, uid_t owner, gid_t group) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("lchown", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("lchown", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1640,9 +1600,8 @@ int chown(const char *pathname, uid_t owner, gid_t group) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("chown", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("chown", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1663,9 +1622,8 @@ int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("fchmodat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("fchmodat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1686,9 +1644,8 @@ int symlinkat(const char *target, int newdirfd, const char *linkpathname) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("symlinkat", linkpathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, target, &reworked_path);
-    }
+    ldfl_find_matching_rules("symlinkat", linkpathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, target, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1708,9 +1665,8 @@ int mkfifo(const char *pathname, mode_t mode) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("mkfifo", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("mkfifo", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1731,9 +1687,8 @@ int mkfifoat(int dirfd, const char *pathname, mode_t mode) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("mkfifoat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("mkfifoat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1754,9 +1709,8 @@ int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("mknodat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("mknodat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1777,9 +1731,8 @@ int mknod(const char *pathname, mode_t mode, dev_t dev) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("mknod", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("mknod", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1800,9 +1753,8 @@ int statx(int dirfd, const char *restrict pathname, int flags, unsigned int mask
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("statx", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("statx", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1822,9 +1774,8 @@ int creat(const char *pathname, mode_t mode) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("creat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("creat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1846,9 +1797,8 @@ int renamex_np(const char *oldpath, const char *newpath, int flags) {
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("renamex_np", oldpath, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
-    }
+    ldfl_find_matching_rules("renamex_np", oldpath, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, oldpath, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
@@ -1870,9 +1820,8 @@ int renameatx_np(int olddirfd, const char *oldpath, int newdirfd, const char *ne
     compiled_mapping_t *return_rules;
     pcre2_match_data   *return_pcre_match = NULL;
     int                 num_rules         = 0;
-    if (ldfl_find_matching_rules("renameatx_np", oldpath, op_mask, &return_rules, &num_rules, &return_pcre_match)) {
-        ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    }
+    ldfl_find_matching_rules("renameatx_np", oldpath, op_mask, &return_rules, &num_rules, &return_pcre_match);
+    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
     if (num_rules > 0) {
         free(return_rules);
