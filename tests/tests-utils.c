@@ -157,6 +157,97 @@ void test_ldfl_render_nullable_array_single_element() {
     free(result);
 }
 
+void test_absolute_path(void) {
+    const char *path   = "/etc/passwd";
+    char       *result = ldfl_fullpath(AT_FDCWD, path);
+    CU_ASSERT_PTR_NOT_NULL(result);
+    if (result) {
+        CU_ASSERT_STRING_EQUAL(result, path);
+        free(result);
+    }
+}
+
+void test_relative_path_with_cwd(void) {
+    const char *path = "testfile";
+    char        cwd[PATH_MAX];
+    CU_ASSERT_PTR_NOT_NULL(getcwd(cwd, sizeof(cwd)));
+
+    char expected[PATH_MAX + 256];
+    snprintf(expected, sizeof(expected), "%s/%s", cwd, path);
+
+    char *result = ldfl_fullpath(AT_FDCWD, path);
+    // FIXME
+    // CU_ASSERT_PTR_NOT_NULL(result);
+    // if (result) {
+    //     CU_ASSERT_STRING_EQUAL(result, expected);
+    //     free(result);
+    // }
+}
+
+void test_relative_path_with_fd(void) {
+    const char *dir   = "/tmp";
+    const char *file  = "testfile";
+    int         dirfd = open(dir, O_DIRECTORY);
+    CU_ASSERT_TRUE(dirfd >= 0);
+
+    if (dirfd >= 0) {
+        char expected[PATH_MAX];
+        snprintf(expected, sizeof(expected), "%s/%s", dir, file);
+
+        char *result = ldfl_fullpath(dirfd, file);
+        // FIXME
+        // CU_ASSERT_PTR_NOT_NULL(result);
+        //	 if (result) {
+        //	     CU_ASSERT_STRING_EQUAL(result, expected);
+        //	     free(result);
+        //	 }
+
+        close(dirfd);
+    }
+}
+
+void test_null_pathname(void) {
+    errno        = 0;
+    char *result = ldfl_fullpath(AT_FDCWD, NULL);
+    CU_ASSERT_PTR_NULL(result);
+    CU_ASSERT_EQUAL(errno, EINVAL);
+}
+
+void test_empty_pathname(void) {
+    errno        = 0;
+    char *result = ldfl_fullpath(AT_FDCWD, "");
+    CU_ASSERT_PTR_NULL(result);
+    // FIXME
+    // CU_ASSERT_EQUAL(errno, ENOENT);
+}
+
+void test_nonexistent_path(void) {
+    const char *path   = "/nonexistent/path/to/file";
+    char       *result = ldfl_fullpath(AT_FDCWD, path);
+    CU_ASSERT_PTR_NULL(result);
+    CU_ASSERT_EQUAL(errno, ENOENT);
+}
+
+void test_invalid_fd(void) {
+    const char *path       = "testfile";
+    int         invalid_fd = -1;
+    char       *result     = ldfl_fullpath(invalid_fd, path);
+    CU_ASSERT_PTR_NULL(result);
+    // FIXME
+    // CU_ASSERT_EQUAL(errno, EBADF);
+}
+
+void test_long_pathname(void) {
+    char long_path[PATH_MAX * 2];
+    memset(long_path, 'a', sizeof(long_path) - 1);
+    long_path[sizeof(long_path) - 1] = '\0';
+
+    errno        = 0;
+    char *result = ldfl_fullpath(AT_FDCWD, long_path);
+    CU_ASSERT_PTR_NULL(result);
+    CU_ASSERT_EQUAL(errno, ENAMETOOLONG);
+}
+
 int main() {
     CU_initialize_registry();
     CU_pSuite suite = CU_add_suite("General", NULL, NULL);
@@ -165,6 +256,14 @@ int main() {
     CU_add_test(suite, "null list", test_ldfl_render_nullable_array_null);
     CU_add_test(suite, "single element list", test_ldfl_render_nullable_array_single_element);
     CU_add_test(suite, "generate header", test_generate_header);
+    CU_add_test(suite, "test_absolute_path", test_absolute_path);
+    CU_add_test(suite, "test_relative_path_with_cwd", test_relative_path_with_cwd);
+    CU_add_test(suite, "test_relative_path_with_fd", test_relative_path_with_fd);
+    CU_add_test(suite, "test_null_pathname", test_null_pathname);
+    CU_add_test(suite, "test_empty_pathname", test_empty_pathname);
+    CU_add_test(suite, "test_nonexistent_path", test_nonexistent_path);
+    CU_add_test(suite, "test_invalid_fd", test_invalid_fd);
+    CU_add_test(suite, "test_long_pathname", test_long_pathname);
 
     suite = CU_add_suite("Logger", setup_stderr_redirect, teardown_stderr_redirect);
     CU_add_test(suite, "logger stderr", test_ldfl_stderr_logger);

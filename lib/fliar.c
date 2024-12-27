@@ -433,7 +433,7 @@ char *ldfl_fullpath(int dirfd, const char *pathname) {
 
         if (dirfd == AT_FDCWD) {
             // Use current working directory
-            if (!getcwd(dir_path, sizeof(dir_path))) {
+            if (getcwd(dir_path, sizeof(dir_path)) == NULL) {
                 perror("getcwd");
                 return NULL;
             }
