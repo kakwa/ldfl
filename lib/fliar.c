@@ -466,10 +466,12 @@ char *ldfl_fullpath(int dirfd, const char *pathname) {
         char *combined_path = calloc(PATH_MAX, sizeof(char));
         if (snprintf(combined_path, PATH_MAX, "%s/%s", dir_path, pathname) >= sizeof(combined_path)) {
             errno = ENAMETOOLONG;
+            free(combined_path);
             return NULL;
         }
 
         resolved_path = realpath(combined_path, NULL);
+        free(combined_path);
     }
 
     if (!resolved_path) {
