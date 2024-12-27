@@ -55,6 +55,18 @@ void test_symlink(void) {
     unlink(linkname);
 }
 
+void test_statx(void) {
+    struct statx buf;
+    int result = statx(AT_FDCWD, "/tmp", 0, 0, &buf);
+    CU_ASSERT_EQUAL(result, 0);
+}
+
+void test_statx_null_path(void) {
+    struct statx buf;
+    int result = statx(AT_FDCWD, NULL, 0, 0, &buf);
+    CU_ASSERT_NOT_EQUAL(result, 0);
+}
+
 int main() {
     CU_initialize_registry();
 
@@ -62,6 +74,8 @@ int main() {
     // Add the test to the suite
     CU_add_test(suite, "test_open_and_unlink", test_open_and_unlink);
     CU_add_test(suite, "test_mkdir_and_rmdir", test_mkdir_and_rmdir);
+    CU_add_test(suite, "test_statx_null_path", test_statx_null_path);
+    CU_add_test(suite, "test_statx", test_statx);
     CU_add_test(suite, "test_symlink", test_symlink);
 
     // Run the tests using the basic interface
