@@ -304,22 +304,6 @@ void test_utimensat(void) {
     remove("testfile_utimensat.txt");
 }
 
-void test_execvp(void) {
-    pid_t pid = fork();
-    CU_ASSERT(pid >= 0);
-
-    if (pid == 0) {
-        char *const args[] = {"/bin/echo", "Hello, World!", NULL};
-        execvp("/bin/echo", args);
-        exit(1); // Only reached if execvp fails
-    } else {
-        int status;
-        wait(&status);
-        CU_ASSERT(WIFEXITED(status));
-        CU_ASSERT_EQUAL(WEXITSTATUS(status), 0);
-    }
-}
-
 void test_readlink(void) {
     symlink("/bin/ls", "testfile_readlink");
     char    buf[PATH_MAX];
@@ -473,6 +457,246 @@ void test___fxstatat(void) {
     remove("testfile___fxstatat.txt");
 }
 
+void test_execve(void) {
+    pid_t pid = fork();
+    CU_ASSERT(pid >= 0);
+
+    if (pid == 0) { // Child process
+        char *const argv[] = {"/bin/echo", "Hello, execve!", NULL};
+        char *const envp[] = {NULL};
+        execve("/bin/echo", argv, envp);
+        exit(1); // If execve fails
+    } else {     // Parent process
+        int status;
+        wait(&status);
+        CU_ASSERT(WIFEXITED(status));
+        CU_ASSERT_EQUAL(WEXITSTATUS(status), 0);
+    }
+}
+
+void test_execl(void) {
+    pid_t pid = fork();
+    CU_ASSERT(pid >= 0);
+
+    if (pid == 0) { // Child process
+        execl("/bin/echo", "echo", "Hello, execl!", NULL);
+        exit(1); // If execl fails
+    } else {     // Parent process
+        int status;
+        wait(&status);
+        CU_ASSERT(WIFEXITED(status));
+        CU_ASSERT_EQUAL(WEXITSTATUS(status), 0);
+    }
+}
+
+void test_execlp(void) {
+    pid_t pid = fork();
+    CU_ASSERT(pid >= 0);
+
+    if (pid == 0) { // Child process
+        execlp("echo", "echo", "Hello, execlp!", NULL);
+        exit(1); // If execlp fails
+    } else {     // Parent process
+        int status;
+        wait(&status);
+        CU_ASSERT(WIFEXITED(status));
+        CU_ASSERT_EQUAL(WEXITSTATUS(status), 0);
+    }
+}
+
+void test_execv(void) {
+    pid_t pid = fork();
+    CU_ASSERT(pid >= 0);
+
+    if (pid == 0) { // Child process
+        char *const argv[] = {"/bin/echo", "Hello, execv!", NULL};
+        execv("/bin/echo", argv);
+        exit(1); // If execv fails
+    } else {     // Parent process
+        int status;
+        wait(&status);
+        CU_ASSERT(WIFEXITED(status));
+        CU_ASSERT_EQUAL(WEXITSTATUS(status), 0);
+    }
+}
+
+void test_execvp(void) {
+    pid_t pid = fork();
+    CU_ASSERT(pid >= 0);
+
+    if (pid == 0) { // Child process
+        char *const argv[] = {"echo", "Hello, execvp!", NULL};
+        execvp("echo", argv);
+        exit(1); // If execvp fails
+    } else {     // Parent process
+        int status;
+        wait(&status);
+        CU_ASSERT(WIFEXITED(status));
+        CU_ASSERT_EQUAL(WEXITSTATUS(status), 0);
+    }
+}
+
+void test_mkdirat(void) {
+    int fd = open(".", O_RDONLY);
+    CU_ASSERT_NOT_EQUAL(fd, -1);
+
+    int result = mkdirat(fd, "testdir_mkdirat", S_IRWXU);
+    CU_ASSERT_EQUAL(result, 0);
+
+    struct stat st;
+    CU_ASSERT_EQUAL(stat("testdir_mkdirat", &st), 0);
+    CU_ASSERT(S_ISDIR(st.st_mode));
+
+    rmdir("testdir_mkdirat");
+    if (fd != -1)
+        close(fd);
+}
+
+void test_link(void) {
+    FILE *file = fopen("testfile_link_source.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    int result = link("testfile_link_source.txt", "testfile_link_target.txt");
+    CU_ASSERT_EQUAL(result, 0);
+
+    struct stat st;
+    CU_ASSERT_EQUAL(stat("testfile_link_target.txt", &st), 0);
+
+    remove("testfile_link_source.txt");
+    remove("testfile_link_target.txt");
+}
+
+void test_linkat(void) {
+    FILE *file = fopen("testfile_linkat_source.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    int result = linkat(AT_FDCWD, "testfile_linkat_source.txt", AT_FDCWD, "testfile_linkat_target.txt", 0);
+    CU_ASSERT_EQUAL(result, 0);
+
+    struct stat st;
+    CU_ASSERT_EQUAL(stat("testfile_linkat_target.txt", &st), 0);
+
+    remove("testfile_linkat_source.txt");
+    remove("testfile_linkat_target.txt");
+}
+
+void test_chmod(void) {
+    FILE *file = fopen("testfile_chmod.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    int result = chmod("testfile_chmod.txt", S_IRUSR | S_IWUSR);
+    CU_ASSERT_EQUAL(result, 0);
+
+    struct stat st;
+    stat("testfile_chmod.txt", &st);
+    CU_ASSERT_EQUAL(st.st_mode & 0777, S_IRUSR | S_IWUSR);
+
+    remove("testfile_chmod.txt");
+}
+
+void test_truncate(void) {
+    FILE *file = fopen("testfile_truncate.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file) {
+        fprintf(file, "Hello, World!");
+        fclose(file);
+    }
+
+    int result = truncate("testfile_truncate.txt", 5);
+    CU_ASSERT_EQUAL(result, 0);
+
+    FILE *file_read = fopen("testfile_truncate.txt", "r");
+    CU_ASSERT_PTR_NOT_NULL(file_read);
+    if (file_read) {
+        char buffer[6] = {0};
+        fread(buffer, 1, 5, file_read);
+        CU_ASSERT_STRING_EQUAL(buffer, "Hello");
+        fclose(file_read);
+    }
+
+    remove("testfile_truncate.txt");
+}
+
+void test_faccessat(void) {
+    FILE *file = fopen("testfile_faccessat.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    int result = faccessat(AT_FDCWD, "testfile_faccessat.txt", F_OK, 0);
+    CU_ASSERT_EQUAL(result, 0);
+
+    remove("testfile_faccessat.txt");
+}
+
+void test_lstat(void) {
+    symlink("/bin/ls", "testfile_lstat_symlink");
+
+    struct stat st;
+    int         result = lstat("testfile_lstat_symlink", &st);
+    CU_ASSERT_EQUAL(result, 0);
+    CU_ASSERT(S_ISLNK(st.st_mode));
+
+    unlink("testfile_lstat_symlink");
+}
+
+void test_lchown(void) {
+    symlink("/bin/ls", "testfile_lchown_symlink");
+    int result = lchown("testfile_lchown_symlink", getuid(), getgid());
+    CU_ASSERT_EQUAL(result, 0);
+    unlink("testfile_lchown_symlink");
+}
+
+void test_chown(void) {
+    FILE *file = fopen("testfile_chown.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    int result = chown("testfile_chown.txt", getuid(), getgid());
+    CU_ASSERT_EQUAL(result, 0);
+
+    remove("testfile_chown.txt");
+}
+
+void test_fchmodat(void) {
+    FILE *file = fopen("testfile_fchmodat.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    int result = fchmodat(AT_FDCWD, "testfile_fchmodat.txt", S_IRUSR | S_IWUSR, 0);
+    CU_ASSERT_EQUAL(result, 0);
+
+    struct stat st;
+    stat("testfile_fchmodat.txt", &st);
+    CU_ASSERT_EQUAL(st.st_mode & 0777, S_IRUSR | S_IWUSR);
+
+    remove("testfile_fchmodat.txt");
+}
+
+void test_symlinkat(void) {
+    int dirfd = open(".", O_RDONLY);
+    CU_ASSERT_NOT_EQUAL(dirfd, -1);
+
+    int result = symlinkat("/bin/ls", dirfd, "testfile_symlinkat");
+    CU_ASSERT_EQUAL(result, 0);
+
+    struct stat st;
+    CU_ASSERT_EQUAL(lstat("testfile_symlinkat", &st), 0);
+    CU_ASSERT(S_ISLNK(st.st_mode));
+
+    unlink("testfile_symlinkat");
+    if (dirfd != -1)
+        close(dirfd);
+}
+
 int main() {
     CU_initialize_registry();
 
@@ -512,6 +736,22 @@ int main() {
     CU_add_test(suite, "Test __xstat64", test___xstat64);
     CU_add_test(suite, "Test __lxstat", test___lxstat);
     CU_add_test(suite, "Test __fxstatat", test___fxstatat);
+    CU_add_test(suite, "Test execve", test_execve);
+    CU_add_test(suite, "Test execl", test_execl);
+    CU_add_test(suite, "Test execlp", test_execlp);
+    CU_add_test(suite, "Test execv", test_execv);
+    CU_add_test(suite, "Test execvp", test_execvp);
+    CU_add_test(suite, "Test mkdirat", test_mkdirat);
+    CU_add_test(suite, "Test link", test_link);
+    CU_add_test(suite, "Test linkat", test_linkat);
+    CU_add_test(suite, "Test chmod", test_chmod);
+    CU_add_test(suite, "Test truncate", test_truncate);
+    CU_add_test(suite, "Test faccessat", test_faccessat);
+    CU_add_test(suite, "Test lstat", test_lstat);
+    CU_add_test(suite, "Test lchown", test_lchown);
+    CU_add_test(suite, "Test chown", test_chown);
+    CU_add_test(suite, "Test fchmodat", test_fchmodat);
+    CU_add_test(suite, "Test symlinkat", test_symlinkat);
 
     // Run the tests using the basic interface
     CU_basic_set_mode(CU_BRM_VERBOSE);
