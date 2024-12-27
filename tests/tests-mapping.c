@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
+
 #include "fliar.c" // Include the header containing the generate_header function declaration.
 
 void test_open_and_unlink(void) {

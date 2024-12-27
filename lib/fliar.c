@@ -785,6 +785,9 @@ int openat(int dirfd, const char *pathname, int flags, ...) {
     ldfl_find_matching_rules("openat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
     ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     pcre2_match_data_free(return_pcre_match);
+    if (num_rules > 0) {
+        free(return_rules);
+    };
     va_end(args);
     int ret = ldfl_variadic_mode_wrap(real_openat, dirfd, reworked_path, flags);
     free(reworked_path);
