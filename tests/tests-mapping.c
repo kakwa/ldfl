@@ -110,7 +110,8 @@ void test_open(void) {
 // Test unlink
 void test_unlink(void) {
     FILE *file = fopen("testfile_unlink.txt", "w");
-    if (file) fclose(file);
+    if (file)
+        fclose(file);
     int result = unlink("testfile_unlink.txt");
     CU_ASSERT_EQUAL(result, 0);
 }
@@ -141,7 +142,8 @@ void test_chdir(void) {
 // Test access
 void test_access(void) {
     FILE *file = fopen("testfile_access.txt", "w");
-    if (file) fclose(file);
+    if (file)
+        fclose(file);
     int result = access("testfile_access.txt", F_OK);
     CU_ASSERT_EQUAL(result, 0);
     remove("testfile_access.txt");
@@ -150,8 +152,9 @@ void test_access(void) {
 // Test stat
 void test_stat(void) {
     struct stat st;
-    FILE *file = fopen("testfile_stat.txt", "w");
-    if (file) fclose(file);
+    FILE       *file = fopen("testfile_stat.txt", "w");
+    if (file)
+        fclose(file);
     int result = stat("testfile_stat.txt", &st);
     CU_ASSERT_EQUAL(result, 0);
     CU_ASSERT(S_ISREG(st.st_mode));
@@ -161,12 +164,13 @@ void test_stat(void) {
 // Test symlink and readlink
 void test_symlink_readlink(void) {
     FILE *file = fopen("testfile_symlink.txt", "w");
-    if (file) fclose(file);
+    if (file)
+        fclose(file);
 
     int symlink_result = symlink("testfile_symlink.txt", "testfile_symlink_link.txt");
     CU_ASSERT_EQUAL(symlink_result, 0);
 
-    char buf[PATH_MAX];
+    char    buf[PATH_MAX];
     ssize_t readlink_result = readlink("testfile_symlink_link.txt", buf, sizeof(buf) - 1);
     CU_ASSERT(readlink_result > 0);
     buf[readlink_result] = '\0';
@@ -195,7 +199,144 @@ void test_freopen(void) {
     remove("testfile_freopen.txt");
 }
 
+void test_openat(void) {
+    int fd = open(".", O_RDONLY); // Open the current directory
+    CU_ASSERT_NOT_EQUAL(fd, -1);
 
+    int file_fd = openat(fd, "testfile_openat.txt", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
+    CU_ASSERT_NOT_EQUAL(file_fd, -1);
+
+    if (file_fd != -1)
+        close(file_fd);
+    if (fd != -1)
+        close(fd);
+    remove("testfile_openat.txt");
+}
+
+void test_rename(void) {
+    FILE *file = fopen("testfile_rename_old.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    int result = rename("testfile_rename_old.txt", "testfile_rename_new.txt");
+    CU_ASSERT_EQUAL(result, 0);
+
+    struct stat st;
+    CU_ASSERT_EQUAL(stat("testfile_rename_new.txt", &st), 0);
+
+    remove("testfile_rename_new.txt");
+}
+
+void test_renameat(void) {
+    FILE *file = fopen("testfile_renameat_old.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    int result = renameat(AT_FDCWD, "testfile_renameat_old.txt", AT_FDCWD, "testfile_renameat_new.txt");
+    CU_ASSERT_EQUAL(result, 0);
+
+    struct stat st;
+    CU_ASSERT_EQUAL(stat("testfile_renameat_new.txt", &st), 0);
+
+    remove("testfile_renameat_new.txt");
+}
+
+void test_unlinkat(void) {
+    FILE *file = fopen("testfile_unlinkat.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    int result = unlinkat(AT_FDCWD, "testfile_unlinkat.txt", 0);
+    CU_ASSERT_EQUAL(result, 0);
+
+    struct stat st;
+    CU_ASSERT_EQUAL(stat("testfile_unlinkat.txt", &st), -1); // File should no longer exist
+}
+
+void test_utime(void) {
+    FILE *file = fopen("testfile_utime.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    struct utimbuf new_times;
+    new_times.actime  = 1000000000; // Set arbitrary access time
+    new_times.modtime = 1000000000; // Set arbitrary modification time
+
+    int result = utime("testfile_utime.txt", &new_times);
+    CU_ASSERT_EQUAL(result, 0);
+
+    struct stat st;
+    stat("testfile_utime.txt", &st);
+    CU_ASSERT_EQUAL(st.st_atime, new_times.actime);
+    CU_ASSERT_EQUAL(st.st_mtime, new_times.modtime);
+
+    remove("testfile_utime.txt");
+}
+
+void test_utimensat(void) {
+    FILE *file = fopen("testfile_utimensat.txt", "w");
+    CU_ASSERT_PTR_NOT_NULL(file);
+    if (file)
+        fclose(file);
+
+    struct timespec times[2];
+    times[0].tv_sec  = 2000000000; // Arbitrary access time
+    times[0].tv_nsec = 0;
+    times[1].tv_sec  = 2000000000; // Arbitrary modification time
+    times[1].tv_nsec = 0;
+
+    int result = utimensat(AT_FDCWD, "testfile_utimensat.txt", times, 0);
+    CU_ASSERT_EQUAL(result, 0);
+
+    struct stat st;
+    stat("testfile_utimensat.txt", &st);
+    CU_ASSERT_EQUAL(st.st_atime, times[0].tv_sec);
+    CU_ASSERT_EQUAL(st.st_mtime, times[1].tv_sec);
+
+    remove("testfile_utimensat.txt");
+}
+
+void test_execvp(void) {
+    pid_t pid = fork();
+    CU_ASSERT(pid >= 0);
+
+    if (pid == 0) {
+        char *const args[] = {"/bin/echo", "Hello, World!", NULL};
+        execvp("/bin/echo", args);
+        exit(1); // Only reached if execvp fails
+    } else {
+        int status;
+        wait(&status);
+        CU_ASSERT(WIFEXITED(status));
+        CU_ASSERT_EQUAL(WEXITSTATUS(status), 0);
+    }
+}
+
+void test_readlink(void) {
+    symlink("/bin/ls", "testfile_readlink");
+    char    buf[PATH_MAX];
+    ssize_t len = readlink("testfile_readlink", buf, sizeof(buf) - 1);
+    CU_ASSERT(len > 0);
+    buf[len] = '\0';
+    CU_ASSERT_STRING_EQUAL(buf, "/bin/ls");
+
+    unlink("testfile_readlink");
+}
+
+void test_opendir(void) {
+    mkdir("testdir_opendir", S_IRWXU);
+
+    DIR *dir = opendir("testdir_opendir");
+    CU_ASSERT_PTR_NOT_NULL(dir);
+    if (dir)
+        closedir(dir);
+
+    rmdir("testdir_opendir");
+}
 
 int main() {
     CU_initialize_registry();
@@ -217,7 +358,16 @@ int main() {
     CU_add_test(suite, "Test access", test_access);
     CU_add_test(suite, "Test stat", test_stat);
     CU_add_test(suite, "Test symlink and readlink", test_symlink_readlink);
-    CU_add_test(suite, "test_freopen", test_freopen);
+    CU_add_test(suite, "Test freopen", test_freopen);
+    CU_add_test(suite, "Test openat", test_openat);
+    CU_add_test(suite, "Test rename", test_rename);
+    CU_add_test(suite, "Test renameat", test_renameat);
+    CU_add_test(suite, "Test unlinkat", test_unlinkat);
+    CU_add_test(suite, "Test utime", test_utime);
+    CU_add_test(suite, "Test utimensat", test_utimensat);
+    CU_add_test(suite, "Test execvp", test_execvp);
+    CU_add_test(suite, "Test readlink", test_readlink);
+    CU_add_test(suite, "Test opendir", test_opendir);
 
     // Run the tests using the basic interface
     CU_basic_set_mode(CU_BRM_VERBOSE);
