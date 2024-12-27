@@ -697,16 +697,88 @@ void test_symlinkat(void) {
         close(dirfd);
 }
 
+void test_mkfifo(void) {
+    const char *fifo_path = "test_fifo";
+
+    // Create FIFO
+    int result = mkfifo(fifo_path, S_IRUSR | S_IWUSR);
+    CU_ASSERT_EQUAL(result, 0);
+
+    // Verify it exists and is a FIFO
+    struct stat st;
+    CU_ASSERT_EQUAL(stat(fifo_path, &st), 0);
+    CU_ASSERT(S_ISFIFO(st.st_mode));
+
+    // Cleanup
+    unlink(fifo_path);
+}
+
+void test_mkfifoat(void) {
+    const char *fifo_name = "test_fifoat";
+    int         dirfd     = open(".", O_RDONLY);
+    CU_ASSERT_NOT_EQUAL(dirfd, -1);
+
+    // Create FIFO using mkfifoat
+    int result = mkfifoat(dirfd, fifo_name, S_IRUSR | S_IWUSR);
+    CU_ASSERT_EQUAL(result, 0);
+
+    // Verify it exists and is a FIFO
+    struct stat st;
+    CU_ASSERT_EQUAL(stat(fifo_name, &st), 0);
+    CU_ASSERT(S_ISFIFO(st.st_mode));
+
+    // Cleanup
+    unlink(fifo_name);
+    if (dirfd != -1)
+        close(dirfd);
+}
+
+void test_mknod(void) {
+    const char *file_path = "test_mknod";
+
+    // Create a regular file using mknod
+    int result = mknod(file_path, S_IFREG | S_IRUSR | S_IWUSR, 0);
+    CU_ASSERT_EQUAL(result, 0);
+
+    // Verify it exists and is a regular file
+    struct stat st;
+    CU_ASSERT_EQUAL(stat(file_path, &st), 0);
+    CU_ASSERT(S_ISREG(st.st_mode));
+
+    // Cleanup
+    unlink(file_path);
+}
+
+void test_mknodat(void) {
+    const char *file_name = "test_mknodat";
+    int         dirfd     = open(".", O_RDONLY);
+    CU_ASSERT_NOT_EQUAL(dirfd, -1);
+
+    // Create a regular file using mknodat
+    int result = mknodat(dirfd, file_name, S_IFREG | S_IRUSR | S_IWUSR, 0);
+    CU_ASSERT_EQUAL(result, 0);
+
+    // Verify it exists and is a regular file
+    struct stat st;
+    CU_ASSERT_EQUAL(stat(file_name, &st), 0);
+    CU_ASSERT(S_ISREG(st.st_mode));
+
+    // Cleanup
+    unlink(file_name);
+    if (dirfd != -1)
+        close(dirfd);
+}
+
 int main() {
     CU_initialize_registry();
 
     CU_pSuite suite = CU_add_suite("Syscall Tests", NULL, NULL);
     // Add the test to the suite
-    CU_add_test(suite, "test_open_and_unlink", test_open_and_unlink);
-    CU_add_test(suite, "test_mkdir_and_rmdir", test_mkdir_and_rmdir);
-    CU_add_test(suite, "test_statx_null_path", test_statx_null_path);
-    CU_add_test(suite, "test_statx", test_statx);
-    CU_add_test(suite, "test_symlink", test_symlink);
+    CU_add_test(suite, "Test open and unlink", test_open_and_unlink);
+    CU_add_test(suite, "Test mkdir and rmdir", test_mkdir_and_rmdir);
+    CU_add_test(suite, "Test statx null path", test_statx_null_path);
+    CU_add_test(suite, "Test statx", test_statx);
+    CU_add_test(suite, "Test symlink", test_symlink);
     CU_add_test(suite, "Test fopen", test_fopen);
     CU_add_test(suite, "Test fopen64", test_fopen64);
     CU_add_test(suite, "Test creat", test_creat);
@@ -752,6 +824,10 @@ int main() {
     CU_add_test(suite, "Test chown", test_chown);
     CU_add_test(suite, "Test fchmodat", test_fchmodat);
     CU_add_test(suite, "Test symlinkat", test_symlinkat);
+    CU_add_test(suite, "Test mkfifo", test_mkfifo);
+    CU_add_test(suite, "Test mkfifoat", test_mkfifoat);
+    CU_add_test(suite, "Test mknod", test_mknod);
+    CU_add_test(suite, "Test mknodat", test_mknodat);
 
     // Run the tests using the basic interface
     CU_basic_set_mode(CU_BRM_VERBOSE);
