@@ -15,39 +15,8 @@ ldfl_mapping_t ldfl_mapping[] = {
 };
 
 
-/*
-
-.log_level values:
-* LOG_EMERG
-* LOG_ALERT
-* LOG_CRIT
-* LOG_ERR
-* LOG_WARNING
-* LOG_NOTICE
-* LOG_INFO
-* LOG_DEBUG
-
-.logger values:
-* ldfl_syslog_logger
-* ldfl_stderr_logger
-* ldfl_dummy_logger
-
-or any logger implementing:
-void cust_logger(int priority, const char *fmt, ...) {}
-
-Use log_mask to enable/disable some log categories:
-
-* LDFL_LOG_INIT:            Log initialization
-* LDFL_LOG_FN_CALL:         Log LibC function calls
-* LDFL_LOG_MAPPING_SEARCH:  Log mapping search stuff
-* LDFL_LOG_MAPPING_APPLY:   Log mapping application stuff
-* LDFL_LOG_ALL:             Log everything
-
-Compose them like so: LDFL_LOG_FN_CALL | LDFL_LOG_MAPPING_APPLY
-*/
-
 ldfl_setting_t ldfl_setting = {
-    .log_mask    = LDFL_LOG_ALL,
+    .log_mask    = LDFL_LOG_MAPPING_RULE_FOUND | LDFL_LOG_FN_CALL | LDFL_LOG_INIT | LDFL_LOG_MAPPING_RULE_APPLY | LDFL_LOG_FN_CALL_ERR,
     .log_level   = LOG_DEBUG,
     .logger      = ldfl_syslog_logger,
 };

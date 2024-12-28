@@ -46,11 +46,13 @@
  * to be logged, and they can be combined using bitwise OR operations.
  */
 typedef enum {
-    LDFL_LOG_FN_CALL        = 1ULL << 0, /**< Log LibC function calls. */
-    LDFL_LOG_MAPPING_SEARCH = 1ULL << 1, /**< Log mapping search operations. */
-    LDFL_LOG_MAPPING_APPLY  = 1ULL << 2, /**< Log mapping application operations. */
-    LDFL_LOG_INIT           = 1ULL << 3, /**< Log initialization and deinitialization operations. */
-    LDFL_LOG_ALL            = ~0ULL      /**< Log all categories. */
+    LDFL_LOG_FN_CALL             = 1ULL << 0, /**< Log LibC function calls. */
+    LDFL_LOG_FN_CALL_ERR         = 1ULL << 1, /**< Log LibC function calls errors */
+    LDFL_LOG_MAPPING_RULE_SEARCH = 1ULL << 2, /**< Log mapping search operations. */
+    LDFL_LOG_MAPPING_RULE_FOUND  = 1ULL << 3, /**< Log mapping found operations. */
+    LDFL_LOG_MAPPING_RULE_APPLY  = 1ULL << 4, /**< Log mapping application operations. */
+    LDFL_LOG_INIT                = 1ULL << 5, /**< Log initialization and deinitialization operations. */
+    LDFL_LOG_ALL                 = ~0ULL      /**< Log all categories. */
 } ldfl_log_category_t;
 
 /**
@@ -131,6 +133,25 @@ typedef struct {
 
 /** @cond */
 
+const char *ldfl_log_category_to_string(ldfl_log_category_t category) {
+    switch (category) {
+    case LDFL_LOG_FN_CALL:
+        return "FN_CALL";
+    case LDFL_LOG_FN_CALL_ERR:
+        return "FN_ERR";
+    case LDFL_LOG_MAPPING_RULE_SEARCH:
+        return "MAPPING_RULE_SEARCH";
+    case LDFL_LOG_MAPPING_RULE_FOUND:
+        return "MAPPING_RULE_FOUND";
+    case LDFL_LOG_MAPPING_RULE_APPLY:
+        return "MAPPING_RULE_APPLY";
+    case LDFL_LOG_INIT:
+        return "INIT";
+    default:
+        return "UNKNOWN";
+    }
+}
+
 // Wrapper struct to store compiled regex
 typedef struct {
     const ldfl_mapping_t *mapping;        // Pointer to the original mapping
@@ -171,19 +192,35 @@ void ldfl_stderr_logger(uint64_t mask, int priority, const char *fmt, ...) {
     va_end(args);
 }
 
-// Syslog logger
+// Syslog logger function
 void ldfl_syslog_logger(uint64_t mask, int priority, const char *fmt, ...) {
     if (priority > ldfl_setting.log_level)
         return;
     if (!(mask & ldfl_setting.log_mask))
         return;
 
+    // Convert the mask into log category string
+    const char *category_str = ldfl_log_category_to_string((ldfl_log_category_t)mask);
+
+    // Allocate a buffer to build the log message
     va_list args;
     va_start(args, fmt);
-    openlog(NULL, LOG_PID, LOG_USER);
-    vsyslog(priority, fmt, args);
-    closelog();
+
+    FILE  *stream;
+    char  *log_message;
+    size_t len;
+    stream = open_memstream(&log_message, &len);
+    fprintf(stream, "LDFL_%s: ", category_str);
+    vfprintf(stream, fmt, args);
     va_end(args);
+    fflush(stream);
+    fclose(stream);
+
+    // Open the syslog
+    openlog(NULL, LOG_PID, LOG_USER);
+    syslog(priority, "%s", log_message); // Log the built message
+    closelog();
+    free(log_message);
 }
 
 // Render Nullable array (for logging things like argv or envp)
@@ -373,8 +410,8 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t m
     for (int i = 0; i < ldfl_rule_count; i++) {
         // Rule not matching
         if (!(ldfl_compiled_rules[i].mapping->operation & mask) || (ldfl_compiled_rules[i].matching_regex == NULL)) {
-            ldfl_setting.logger(LDFL_LOG_MAPPING_SEARCH, LOG_DEBUG, "rule[%s] not relevant for call '%s', skipping",
-                                ldfl_mapping[i].name, call);
+            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_SEARCH, LOG_DEBUG,
+                                "rule[%s] not relevant for call '%s', skipping", ldfl_mapping[i].name, call);
             continue;
         }
 
@@ -390,8 +427,9 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t m
                              NULL                                   // Default match context
         );
         if (rc <= 0) {
-            ldfl_setting.logger(LDFL_LOG_MAPPING_SEARCH, LOG_DEBUG, "rule[%s] not matching pathname '%s' for call '%s'",
-                                ldfl_mapping[i].name, pathname, call);
+            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_SEARCH, LOG_DEBUG,
+                                "rule[%s] not matching pathname '%s' for call '%s'", ldfl_mapping[i].name, pathname,
+                                call);
             pcre2_match_data_free(match_data);
             continue;
         }
@@ -406,7 +444,7 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t m
 
         for (int j = 0; j < matching_rule_count; j++) {
             (*return_rules)[j] = ldfl_compiled_rules[j + i];
-            ldfl_setting.logger(LDFL_LOG_MAPPING_SEARCH, LOG_INFO,
+            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_FOUND, LOG_INFO,
                                 "rule[%s] match pathname '%s', selected for call '%s'", ldfl_mapping[i].name, pathname,
                                 call);
         }
@@ -488,8 +526,8 @@ void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_ma
         return;
     }
     if (num_rules <= 0) {
-        ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_DEBUG, "No Rule to apply on path '%s', returning the same path",
-                            pathname_in);
+        ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_DEBUG,
+                            "No Rule to apply on path '%s', returning the same path", pathname_in);
 
         *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
         stpcpy(*pathname_out, pathname_in);
@@ -512,19 +550,22 @@ void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_ma
                              PCRE2_SUBSTITUTE_GLOBAL, match_group, NULL, (PCRE2_SPTR)mapping_rules[i].mapping->target,
                              PCRE2_ZERO_TERMINATED, (PCRE2_UCHAR *)new_pathname, &replacement_len);
             if (replacement_len <= 0) {
-                ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_WARNING,
+                ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING,
                                     "Replacement in path failed for rule '%s' on path '%s'",
                                     mapping_rules[i].mapping->name, pathname_in);
+                free(new_pathname);
+                *pathname_out = NULL;
+                return;
             }
             *pathname_out = new_pathname;
 
-            ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_DEBUG,
+            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_DEBUG,
                                 "LDFL_OP_MAP Rule [%s] applied, path '%s' rewritten to '%s'",
                                 mapping_rules[i].mapping->name, pathname_in, *pathname_out);
             return; // FIXME (don't only apply the first rule)
             break;
         case LDFL_OP_EXEC_MAP:
-            ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_WARNING, "Operation LDFL_OP_EXEC_MAP not yet handle");
+            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING, "Operation LDFL_OP_EXEC_MAP not yet handle");
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
             return; // FIXME (don't only apply the first rule)
@@ -532,31 +573,31 @@ void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_ma
         case LDFL_OP_MEM_OPEN:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
-            ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_WARNING, "Operation LDFL_OP_MEM_OPEN not yet handle");
+            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING, "Operation LDFL_OP_MEM_OPEN not yet handle");
             return; // FIXME (don't only apply the first rule)
             break;
         case LDFL_OP_STATIC:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
-            ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_WARNING, "Operation LDFL_OP_STATIC not yet handle");
+            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING, "Operation LDFL_OP_STATIC not yet handle");
             return; // FIXME (don't only apply the first rule)
             break;
         case LDFL_OP_PERM:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
-            ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_WARNING, "Operation LDFL_OP_PERM not yet handle");
+            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING, "Operation LDFL_OP_PERM not yet handle");
             return; // FIXME (don't only apply the first rule)
             break;
         case LDFL_OP_DENY:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
-            ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_WARNING, "Operation LDFL_OP_DENY not yet handle");
+            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING, "Operation LDFL_OP_DENY not yet handle");
             return; // FIXME (don't only apply the first rule)
             break;
         default:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
-            ldfl_setting.logger(LDFL_LOG_MAPPING_APPLY, LOG_WARNING, "Unknown operation %d not yet handle",
+            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING, "Unknown operation %d not yet handle",
                                 mapping_rules[i].mapping->operation);
             return; // FIXME (don't only apply the first rule)
         }
@@ -723,6 +764,11 @@ static void __attribute__((constructor(101))) ldfl_init() {
     ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "initialized");
 }
 
+#define LDFL_LOG_ERR(expr, fmt, ...)                                                                                   \
+    if (!(expr)) {                                                                                                     \
+        ldfl_setting.logger(LDFL_LOG_FN_CALL_ERR, LOG_ERR, fmt, ##__VA_ARGS__);                                        \
+    }
+
 char *apply_rules_and_cleanup(char *func_name, const char *pathname, uint64_t op_mask) {
     char               *reworked_path = NULL;
     compiled_mapping_t *return_rules;
@@ -751,6 +797,8 @@ FILE *fopen(const char *restrict pathname, const char *restrict mode) {
     RINIT;
     char *reworked_path = apply_rules_and_cleanup("fopen", pathname, op_mask);
     FILE *ret           = real_fopen(reworked_path, mode);
+    LDFL_LOG_ERR(ret, "real_fopen failed: reworked_path=%s, mode=%s, errno=%d (%s)", reworked_path, mode, errno,
+                 strerror(errno));
     free(reworked_path);
     return ret;
 }
@@ -761,6 +809,9 @@ FILE *fopen64(const char *pathname, const char *mode) {
     RINIT;
     char *reworked_path = apply_rules_and_cleanup("fopen64", pathname, op_mask);
     FILE *ret           = real_fopen64(reworked_path, mode);
+    LDFL_LOG_ERR(ret, "real_fopen64 failed: reworked_path=%s, mode=%s, errno=%d (%s)", reworked_path, mode, errno,
+                 strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -778,6 +829,9 @@ int openat(int dirfd, const char *pathname, int flags, ...) {
 
     va_end(args);
     int ret = ldfl_variadic_mode_wrap(real_openat, dirfd, reworked_path, flags);
+    LDFL_LOG_ERR(ret, "real_openat failed: dirfd=%d, reworked_path=%s, flags=%d, errno=%d (%s)", dirfd, reworked_path,
+                 flags, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -795,6 +849,9 @@ int open(const char *pathname, int flags, ... /* mode_t mode */) {
 
     va_end(args);
     int ret = ldfl_variadic_mode_wrap(real_open, reworked_path, flags);
+    LDFL_LOG_ERR(ret, "real_open failed: reworked_path=%s, flags=%d, errno=%d (%s)", reworked_path, flags, errno,
+                 strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -812,6 +869,9 @@ int open64(const char *pathname, int flags, ... /* mode_t mode */) {
 
     va_end(args);
     int ret = ldfl_variadic_mode_wrap(real_open64, reworked_path, flags);
+    LDFL_LOG_ERR(ret, "real_open64 failed: reworked_path=%s, flags=%d, errno=%d (%s)", reworked_path, flags, errno,
+                 strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -829,6 +889,9 @@ int openat64(int dirfd, const char *pathname, int flags, ... /* mode_t mode */) 
 
     va_end(args);
     int ret = ldfl_variadic_mode_wrap(real_openat64, dirfd, reworked_path, flags);
+    LDFL_LOG_ERR(ret, "real_openat64 failed: dirfd=%d, reworked_path=%s, flags=%d, errno=%d (%s)", dirfd, reworked_path,
+                 flags, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -841,6 +904,8 @@ int rename(const char *oldpath, const char *newpath) {
     char *reworked_newpath = apply_rules_and_cleanup("rename", newpath, op_mask);
 
     int ret = real_rename(reworked_oldpath, reworked_newpath);
+    LDFL_LOG_ERR(ret, "real_rename failed: reworked_oldpath=%s, reworked_newpath=%s, errno=%d (%s)", reworked_oldpath,
+                 reworked_newpath, errno, strerror(errno));
 
     free(reworked_oldpath);
     free(reworked_newpath);
@@ -858,6 +923,10 @@ int renameat2(int olddirfd, const char *oldpath, int newdirfd, const char *newpa
     char *reworked_newpath = apply_rules_and_cleanup("renameat2", newpath, op_mask);
 
     int ret = real_renameat2(olddirfd, reworked_oldpath, newdirfd, reworked_newpath, flags);
+    LDFL_LOG_ERR(ret,
+                 "real_renameat2 failed: olddirfd=%d, reworked_oldpath=%s, newdirfd=%d, reworked_newpath=%s, flags=%d, "
+                 "errno=%d (%s)",
+                 olddirfd, reworked_oldpath, newdirfd, reworked_newpath, flags, errno, strerror(errno));
     free(reworked_oldpath);
     free(reworked_newpath);
     return ret;
@@ -873,6 +942,9 @@ int renameat(int olddirfd, const char *oldpath, int newdirfd, const char *newpat
     char *reworked_newpath = apply_rules_and_cleanup("renameat", newpath, op_mask);
 
     int ret = real_renameat(olddirfd, reworked_oldpath, newdirfd, reworked_newpath);
+    LDFL_LOG_ERR(
+        ret, "real_renameat failed: olddirfd=%d, reworked_oldpath=%s, newdirfd=%d, reworked_newpath=%s, errno=%d (%s)",
+        olddirfd, reworked_oldpath, newdirfd, reworked_newpath, errno, strerror(errno));
     free(reworked_oldpath);
     free(reworked_newpath);
     return ret;
@@ -885,6 +957,8 @@ int unlink(const char *pathname) {
     char *reworked_path = apply_rules_and_cleanup("unlink", pathname, op_mask);
 
     int ret = real_unlink(reworked_path);
+    LDFL_LOG_ERR(ret, "real_unlink failed: reworked_path=%s, errno=%d (%s)", reworked_path, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -897,6 +971,9 @@ int unlinkat(int dirfd, const char *pathname, int flags) {
     char *reworked_path = apply_rules_and_cleanup("unlinkat", pathname, op_mask);
 
     int ret = real_unlinkat(dirfd, reworked_path, flags);
+    LDFL_LOG_ERR(ret == 0, "real_unlinkat failed: dirfd=%d, reworked_path=%s, flags=%d, errno=%d (%s)", dirfd,
+                 reworked_path, flags, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -909,6 +986,8 @@ int utime(const char *pathname, const struct utimbuf *times) {
     char *reworked_path = apply_rules_and_cleanup("utime", pathname, op_mask);
 
     int ret = real_utime(reworked_path, times);
+    LDFL_LOG_ERR(ret == 0, "real_utime failed: reworked_path=%s, errno=%d (%s)", reworked_path, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -922,6 +1001,9 @@ int utimes(const char *pathname, const struct timeval times[2]) {
     char *reworked_path = apply_rules_and_cleanup("utimes", pathname, op_mask);
 
     int ret = real_utimes(reworked_path, times);
+    LDFL_LOG_ERR(ret == 0, "real_utimes failed: reworked_path=%s, errno=%d (%s)", reworked_path, errno,
+                 strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -935,6 +1017,9 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2], i
     char *reworked_path = apply_rules_and_cleanup("utimensat", pathname, op_mask);
 
     int ret = real_utimensat(dirfd, pathname, times, flags);
+    LDFL_LOG_ERR(ret == 0, "real_utimensat failed: dirfd=%d, pathname=%s, flags=%d, errno=%d (%s)", dirfd, pathname,
+                 flags, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -946,6 +1031,9 @@ int access(const char *pathname, int mode) {
     char *reworked_path = apply_rules_and_cleanup("access", pathname, op_mask);
 
     int ret = real_access(reworked_path, mode);
+    LDFL_LOG_ERR(ret == 0, "real_access failed: reworked_path=%s, mode=%d, errno=%d (%s)", reworked_path, mode, errno,
+                 strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -958,6 +1046,9 @@ int fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags) {
     char *reworked_path = apply_rules_and_cleanup("fstatat", pathname, op_mask);
 
     int ret = real_fstatat(dirfd, pathname, statbuf, flags);
+    LDFL_LOG_ERR(ret == 0, "real_fstatat failed: dirfd=%d, pathname=%s, flags=%d, errno=%d (%s)", dirfd, pathname,
+                 flags, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -969,6 +1060,9 @@ int __xstat(int version, const char *pathname, struct stat *statbuf) {
     char *reworked_path = apply_rules_and_cleanup("__xstat", pathname, op_mask);
 
     int ret = real___xstat(version, pathname, statbuf);
+    LDFL_LOG_ERR(ret == 0, "real___xstat failed: version=%d, pathname=%s, errno=%d (%s)", version, pathname, errno,
+                 strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -980,6 +1074,9 @@ int __xstat64(int version, const char *pathname, struct stat *statbuf) {
     char *reworked_path = apply_rules_and_cleanup("__xstat64", pathname, op_mask);
 
     int ret = real___xstat64(version, pathname, statbuf);
+    LDFL_LOG_ERR(ret == 0, "real___xstat64 failed: version=%d, pathname=%s, errno=%d (%s)", version, pathname, errno,
+                 strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -991,6 +1088,9 @@ int __lxstat(int version, const char *pathname, struct stat *statbuf) {
     char *reworked_path = apply_rules_and_cleanup("__lxstat", pathname, op_mask);
 
     int ret = real___lxstat(version, pathname, statbuf);
+    LDFL_LOG_ERR(ret == 0, "real___lxstat failed: version=%d, pathname=%s, errno=%d (%s)", version, pathname, errno,
+                 strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1003,6 +1103,9 @@ int __fxstatat(int version, int dirfd, const char *pathname, struct stat *statbu
     char *reworked_path = apply_rules_and_cleanup("__fxstatat", pathname, op_mask);
 
     int ret = real___fxstatat(version, dirfd, pathname, statbuf, flags);
+    LDFL_LOG_ERR(ret == 0, "real___fxstatat failed: version=%d, dirfd=%d, pathname=%s, flags=%d, errno=%d (%s)",
+                 version, dirfd, pathname, flags, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1020,6 +1123,8 @@ int execve(const char *pathname, char *const argv[], char *const envp[]) {
     // TODO argv[0]
 
     int ret = real_execve(pathname, argv, envp);
+    LDFL_LOG_ERR(ret == 0, "real_execve failed: pathname=%s, errno=%d (%s)", pathname, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1035,6 +1140,8 @@ int execl(const char *pathname, const char *arg, ...) {
 
     va_end(args);
     int ret = ldfl_variadic_str_wrap(real_execl, arg, reworked_path, arg);
+    LDFL_LOG_ERR(ret == 0, "real_execl failed: reworked_path=%s, errno=%d (%s)", reworked_path, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1049,6 +1156,9 @@ int execlp(const char *file, const char *arg, ...) {
     // TODO argv[0]
 
     int ret = ldfl_variadic_str_wrap(real_execlp, arg, reworked_path, arg);
+    LDFL_LOG_ERR(ret == 0, "real_execlp failed: reworked_path=%s, errno=%d (%s)", reworked_path, errno,
+                 strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1063,6 +1173,8 @@ int execv(const char *pathname, char *const argv[]) {
     // TODO argv[0]
 
     int ret = real_execv(pathname, argv);
+    LDFL_LOG_ERR(ret == 0, "real_execv failed: pathname=%s, errno=%d (%s)", pathname, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1077,6 +1189,9 @@ int execvp(const char *file, char *const argv[]) {
     // TODO argv[0]
 
     int ret = real_execvp(reworked_path, argv);
+    LDFL_LOG_ERR(ret == 0, "real_execvp failed: reworked_path=%s, errno=%d (%s)", reworked_path, errno,
+                 strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1088,6 +1203,9 @@ DIR *opendir(const char *name) {
     char *reworked_path = apply_rules_and_cleanup("opendir", name, op_mask);
 
     DIR *ret = real_opendir(reworked_path);
+    LDFL_LOG_ERR(ret != NULL, "real_opendir failed: reworked_path=%s, errno=%d (%s)", reworked_path, errno,
+                 strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1099,6 +1217,9 @@ int mkdir(const char *pathname, mode_t mode) {
     char *reworked_path = apply_rules_and_cleanup("mkdir", pathname, op_mask);
 
     int ret = real_mkdir(reworked_path, mode);
+    LDFL_LOG_ERR(ret == 0, "real_mkdir failed: reworked_path=%s, mode=%d, errno=%d (%s)", reworked_path, mode, errno,
+                 strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1111,6 +1232,9 @@ int mkdirat(int dirfd, const char *pathname, mode_t mode) {
     char *reworked_path = apply_rules_and_cleanup("mkdirat", pathname, op_mask);
 
     int ret = real_mkdirat(dirfd, reworked_path, mode);
+    LDFL_LOG_ERR(ret == 0, "real_mkdirat failed: dirfd=%d, reworked_path=%s, mode=%d, errno=%d (%s)", dirfd,
+                 reworked_path, mode, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1122,6 +1246,8 @@ int rmdir(const char *pathname) {
     char *reworked_path = apply_rules_and_cleanup("rmdir", pathname, op_mask);
 
     int ret = real_rmdir(reworked_path);
+    LDFL_LOG_ERR(ret == 0, "real_rmdir failed: reworked_path=%s, errno=%d (%s)", reworked_path, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1133,6 +1259,8 @@ int chdir(const char *pathname) {
     char *reworked_path = apply_rules_and_cleanup("chdir", pathname, op_mask);
 
     int ret = real_chdir(reworked_path);
+    LDFL_LOG_ERR(ret == 0, "real_chdir failed: reworked_path=%s, errno=%d (%s)", reworked_path, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1146,6 +1274,9 @@ int symlink(const char *target, const char *linkpathname) {
     char *reworked_target       = apply_rules_and_cleanup("symlink", target, op_mask);
 
     int ret = real_symlink(reworked_target, reworked_linkpathname);
+    LDFL_LOG_ERR(ret == 0, "real_symlink failed: reworked_target=%s, reworked_linkpathname=%s, errno=%d (%s)",
+                 reworked_target, reworked_linkpathname, errno, strerror(errno));
+
     free(reworked_linkpathname);
     free(reworked_target);
     return ret;
@@ -1158,6 +1289,9 @@ ssize_t readlink(const char *pathname, char *buf, size_t bufsiz) {
     char *reworked_path = apply_rules_and_cleanup("readlink", pathname, op_mask);
 
     int ret = real_readlink(reworked_path, buf, bufsiz);
+    LDFL_LOG_ERR(ret != -1, "real_readlink failed: reworked_path=%s, errno=%d (%s)", reworked_path, errno,
+                 strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1170,6 +1304,9 @@ int link(const char *oldpath, const char *newpath) {
     char *reworked_newpath = apply_rules_and_cleanup("link", newpath, op_mask);
 
     int ret = real_link(reworked_oldpath, reworked_newpath);
+    LDFL_LOG_ERR(ret == 0, "real_link failed: reworked_oldpath=%s, reworked_newpath=%s, errno=%d (%s)",
+                 reworked_oldpath, reworked_newpath, errno, strerror(errno));
+
     free(reworked_oldpath);
     free(reworked_newpath);
     return ret;
@@ -1185,6 +1322,11 @@ int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
     char *reworked_newpath = apply_rules_and_cleanup("linkat", newpath, op_mask);
 
     int ret = real_linkat(olddirfd, reworked_oldpath, newdirfd, reworked_newpath, flags);
+    LDFL_LOG_ERR(ret == 0,
+                 "real_linkat failed: olddirfd=%d, reworked_oldpath=%s, newdirfd=%d, reworked_newpath=%s, flags=%d, "
+                 "errno=%d (%s)",
+                 olddirfd, reworked_oldpath, newdirfd, reworked_newpath, flags, errno, strerror(errno));
+
     free(reworked_oldpath);
     free(reworked_newpath);
     return ret;
@@ -1197,6 +1339,9 @@ int chmod(const char *pathname, mode_t mode) {
     char *reworked_path = apply_rules_and_cleanup("chmod", pathname, op_mask);
 
     int ret = real_chmod(reworked_path, mode);
+    LDFL_LOG_ERR(ret == 0, "real_chmod failed: reworked_path=%s, mode=%d, errno=%d (%s)", reworked_path, mode, errno,
+                 strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1208,6 +1353,9 @@ int truncate(const char *pathname, off_t length) {
     char *reworked_path = apply_rules_and_cleanup("truncate", pathname, op_mask);
 
     int ret = real_truncate(reworked_path, length);
+    LDFL_LOG_ERR(ret == 0, "real_truncate failed: reworked_path=%s, length=%ld, errno=%d (%s)", reworked_path, length,
+                 errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1220,6 +1368,9 @@ int faccessat(int dirfd, const char *pathname, int mode, int flags) {
     char *reworked_path = apply_rules_and_cleanup("faccessat", pathname, op_mask);
 
     int ret = real_faccessat(dirfd, reworked_path, mode, flags);
+    LDFL_LOG_ERR(ret == 0, "real_faccessat failed: dirfd=%d, reworked_path=%s, mode=%d, flags=%d, errno=%d (%s)", dirfd,
+                 reworked_path, mode, flags, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1231,6 +1382,8 @@ int stat(const char *pathname, struct stat *statbuf) {
     char *reworked_path = apply_rules_and_cleanup("stat", pathname, op_mask);
 
     int ret = real_stat(reworked_path, statbuf);
+    LDFL_LOG_ERR(ret == 0, "real_stat failed: reworked_path=%s, errno=%d (%s)", reworked_path, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1242,6 +1395,8 @@ int lstat(const char *pathname, struct stat *statbuf) {
     char *reworked_path = apply_rules_and_cleanup("lstat", pathname, op_mask);
 
     int ret = real_lstat(reworked_path, statbuf);
+    LDFL_LOG_ERR(ret == 0, "real_lstat failed: reworked_path=%s, errno=%d (%s)", reworked_path, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1255,6 +1410,9 @@ int lchown(const char *pathname, uid_t owner, gid_t group) {
     char *reworked_path = apply_rules_and_cleanup("lchown", pathname, op_mask);
 
     int ret = real_lchown(reworked_path, owner, group);
+    LDFL_LOG_ERR(ret == 0, "real_lchown failed: reworked_path=%s, owner=%d, group=%d, errno=%d (%s)", reworked_path,
+                 owner, group, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1268,6 +1426,9 @@ int chown(const char *pathname, uid_t owner, gid_t group) {
     char *reworked_path = apply_rules_and_cleanup("chown", pathname, op_mask);
 
     int ret = real_chown(reworked_path, owner, group);
+    LDFL_LOG_ERR(ret == 0, "real_chown failed: reworked_path=%s, owner=%d, group=%d, errno=%d (%s)", reworked_path,
+                 owner, group, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1281,6 +1442,8 @@ int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
     char *reworked_path = apply_rules_and_cleanup("fchmodat", pathname, op_mask);
 
     int ret = real_fchmodat(dirfd, reworked_path, mode, flags);
+    LDFL_LOG_ERR(ret == 0, "real_fchmodat failed: dirfd=%d, reworked_path=%s, mode=%d, flags=%d, errno=%d (%s)", dirfd,
+                 reworked_path, mode, flags, errno, strerror(errno));
     free(reworked_path);
     return ret;
 }
@@ -1295,6 +1458,9 @@ int symlinkat(const char *target, int newdirfd, const char *linkpathname) {
     char *reworked_linkpathname = apply_rules_and_cleanup("symlinkat", linkpathname, op_mask);
 
     int ret = real_symlinkat(reworked_target, newdirfd, reworked_linkpathname);
+    LDFL_LOG_ERR(ret == 0,
+                 "real_symlinkat failed: reworked_target=%s, newdirfd=%d, reworked_linkpathname=%s, errno=%d (%s)",
+                 reworked_target, newdirfd, reworked_linkpathname, errno, strerror(errno));
     free(reworked_target);
     free(reworked_linkpathname);
     return ret;
@@ -1308,6 +1474,8 @@ int mkfifo(const char *pathname, mode_t mode) {
     char *reworked_path = apply_rules_and_cleanup("mkfifo", pathname, op_mask);
 
     int ret = real_mkfifo(reworked_path, mode);
+    LDFL_LOG_ERR(ret == 0, "real_mkfifo failed: reworked_path=%s, mode=%d, errno=%d (%s)", reworked_path, mode, errno,
+                 strerror(errno));
     free(reworked_path);
     return ret;
 }
@@ -1321,6 +1489,8 @@ int mkfifoat(int dirfd, const char *pathname, mode_t mode) {
     char *reworked_path = apply_rules_and_cleanup("mkfifoat", pathname, op_mask);
 
     int ret = real_mkfifoat(dirfd, reworked_path, mode);
+    LDFL_LOG_ERR(ret == 0, "real_mkfifoat failed: dirfd=%d, reworked_path=%s, mode=%d, errno=%d (%s)", dirfd,
+                 reworked_path, mode, errno, strerror(errno));
     free(reworked_path);
     return ret;
 }
@@ -1334,6 +1504,8 @@ int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev) {
     char *reworked_path = apply_rules_and_cleanup("mknodat", pathname, op_mask);
 
     int ret = real_mknodat(dirfd, reworked_path, mode, dev);
+    LDFL_LOG_ERR(ret == 0, "real_mknodat failed: dirfd=%d, reworked_path=%s, mode=%d, dev=%ld, errno=%d (%s)", dirfd,
+                 reworked_path, mode, dev, errno, strerror(errno));
     free(reworked_path);
     return ret;
 }
@@ -1347,6 +1519,8 @@ int mknod(const char *pathname, mode_t mode, dev_t dev) {
     char *reworked_path = apply_rules_and_cleanup("mknod", pathname, op_mask);
 
     int ret = real_mknod(reworked_path, mode, dev);
+    LDFL_LOG_ERR(ret == 0, "real_mknod failed: reworked_path=%s, mode=%d, dev=%ld, errno=%d (%s)", reworked_path, mode,
+                 dev, errno, strerror(errno));
     free(reworked_path);
     return ret;
 }
@@ -1360,6 +1534,9 @@ int statx(int dirfd, const char *restrict pathname, int flags, unsigned int mask
     char *reworked_path = apply_rules_and_cleanup("statx", pathname, op_mask);
 
     int ret = real_statx(dirfd, reworked_path, flags, mask, statxbuf);
+    LDFL_LOG_ERR(ret == 0, "real_statx failed: dirfd=%d, reworked_path=%s, flags=%d, mask=%d, errno=%d (%s)", dirfd,
+                 reworked_path, flags, mask, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1372,6 +1549,8 @@ int creat(const char *pathname, mode_t mode) {
     char *reworked_path = apply_rules_and_cleanup("creat", pathname, op_mask);
 
     int ret = real_creat(reworked_path, mode);
+    LDFL_LOG_ERR(ret == 0, "real_creat failed: reworked_path=%s, mode=%d, errno=%d (%s)", reworked_path, mode, errno,
+                 strerror(errno));
     free(reworked_path);
 
     return ret;
@@ -1387,6 +1566,8 @@ int renamex_np(const char *oldpath, const char *newpath, int flags) {
     char *reworked_newpath = apply_rules_and_cleanup("renamex_np", newpath, op_mask);
 
     int ret = real_renamex_np(reworked_oldpath, reworked_newpath, flags);
+    LDFL_LOG_ERR(ret == 0, "real_renamex_np failed: reworked_oldpath=%s, reworked_newpath=%s, flags=%d, errno=%d (%s)",
+                 reworked_oldpath, reworked_newpath, flags, errno, strerror(errno));
     free(reworked_oldpath);
     free(reworked_newpath);
     return ret;
@@ -1402,6 +1583,10 @@ int renameatx_np(int olddirfd, const char *oldpath, int newdirfd, const char *ne
     char *reworked_newpath = apply_rules_and_cleanup("renamexat_np", newpath, op_mask);
 
     int ret = real_renameatx_np(olddirfd, reworked_oldpath, newdirfd, reworked_newpath, flags);
+    LDFL_LOG_ERR(ret == 0,
+                 "real_renameatx_np failed: olddirfd=%d, reworked_oldpath=%s, newdirfd=%d, reworked_newpath=%s, "
+                 "flags=%d, errno=%d (%s)",
+                 olddirfd, reworked_oldpath, newdirfd, reworked_newpath, flags, errno, strerror(errno));
     free(reworked_oldpath);
     free(reworked_newpath);
     return ret;
