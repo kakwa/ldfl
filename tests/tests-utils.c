@@ -64,6 +64,15 @@ void vsyslog(int priority, const char *fmt, va_list args) {
     vsnprintf(syslog_buffer, sizeof(syslog_buffer), fmt, args);
 }
 
+// Mock syslog implementation
+void syslog(int priority, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    syslog_priority = priority;
+    vsnprintf(syslog_buffer, sizeof(syslog_buffer), fmt, args);
+    va_end(args);
+}
+
 // Setup function to redirect stderr
 static int setup_stderr_redirect(void) {
     memset(stderr_buffer, 0, sizeof(stderr_buffer));
@@ -114,13 +123,13 @@ void test_ldfl_syslog_logger(void) {
     CU_ASSERT_STRING_EQUAL_FATAL(syslog_buffer, ""); // No output expected
 
     // Log a message at the level
-    ldfl_syslog_logger(LDFL_LOG_ALL, LOG_NOTICE, "Notice message: %d", 99);
-    CU_ASSERT_STRING_EQUAL_FATAL(syslog_buffer, "Notice message: 99");
+    ldfl_syslog_logger(LDFL_LOG_FN_CALL, LOG_NOTICE, "Notice message: %d", 99);
+    CU_ASSERT_STRING_EQUAL_FATAL(syslog_buffer, "LDFL_FN_CALL: Notice message: 99");
     CU_ASSERT_EQUAL(syslog_priority, LOG_NOTICE);
 
     // Log a message above the level
-    ldfl_syslog_logger(LDFL_LOG_ALL, LOG_CRIT, "Critical error");
-    CU_ASSERT_STRING_EQUAL_FATAL(syslog_buffer, "Critical error");
+    ldfl_syslog_logger(LDFL_LOG_FN_CALL, LOG_CRIT, "Critical error");
+    CU_ASSERT_STRING_EQUAL_FATAL(syslog_buffer, "LDFL_FN_CALL: Critical error");
     CU_ASSERT_EQUAL(syslog_priority, LOG_CRIT);
 }
 
