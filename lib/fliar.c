@@ -882,16 +882,7 @@ int unlink(const char *pathname) {
     uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
     ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG, "unlink called: pathname=%s", pathname);
     RINIT;
-    char               *reworked_path = NULL;
-    compiled_mapping_t *return_rules;
-    pcre2_match_data   *return_pcre_match = NULL;
-    int                 num_rules         = 0;
-    ldfl_find_matching_rules("unlink", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
-    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    pcre2_match_data_free(return_pcre_match);
-    if (num_rules > 0) {
-        free(return_rules);
-    };
+    char *reworked_path = apply_rules_and_cleanup("unlink", pathname, op_mask);
 
     int ret = real_unlink(reworked_path);
     free(reworked_path);
@@ -903,16 +894,7 @@ int unlinkat(int dirfd, const char *pathname, int flags) {
     ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG, "unlinkat called: dirfd=%d, pathname=%s, flags=%d", dirfd,
                         pathname, flags);
     RINIT;
-    char               *reworked_path = NULL;
-    compiled_mapping_t *return_rules;
-    pcre2_match_data   *return_pcre_match = NULL;
-    int                 num_rules         = 0;
-    ldfl_find_matching_rules("unlinkat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
-    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    pcre2_match_data_free(return_pcre_match);
-    if (num_rules > 0) {
-        free(return_rules);
-    };
+    char *reworked_path = apply_rules_and_cleanup("unlinkat", pathname, op_mask);
 
     int ret = real_unlinkat(dirfd, reworked_path, flags);
     free(reworked_path);
@@ -924,16 +906,7 @@ int utime(const char *pathname, const struct utimbuf *times) {
     ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG, "utimes called: pathname=%s, times=[%ld, %ld]", pathname,
                         (times == NULL) ? 0 : times->actime, (times == NULL) ? 0 : times->modtime);
     RINIT;
-    char               *reworked_path = NULL;
-    compiled_mapping_t *return_rules;
-    pcre2_match_data   *return_pcre_match = NULL;
-    int                 num_rules         = 0;
-    ldfl_find_matching_rules("utime", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
-    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    pcre2_match_data_free(return_pcre_match);
-    if (num_rules > 0) {
-        free(return_rules);
-    };
+    char *reworked_path = apply_rules_and_cleanup("utime", pathname, op_mask);
 
     int ret = real_utime(reworked_path, times);
     free(reworked_path);
@@ -946,18 +919,22 @@ int utimes(const char *pathname, const struct timeval times[2]) {
                         (times == NULL) ? 0 : times[0].tv_sec, (times == NULL) ? 0 : times[0].tv_usec,
                         (times == NULL) ? 0 : times[1].tv_sec, (times == NULL) ? 0 : times[1].tv_usec);
     RINIT;
-    char               *reworked_path = NULL;
-    compiled_mapping_t *return_rules;
-    pcre2_match_data   *return_pcre_match = NULL;
-    int                 num_rules         = 0;
-    ldfl_find_matching_rules("utimes", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
-    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    pcre2_match_data_free(return_pcre_match);
-    if (num_rules > 0) {
-        free(return_rules);
-    };
+    char *reworked_path = apply_rules_and_cleanup("utimes", pathname, op_mask);
 
     int ret = real_utimes(reworked_path, times);
+    free(reworked_path);
+    return ret;
+}
+
+int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags) {
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
+    ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG,
+                        "utimensat called: dirfd=%d, pathname=%s, times=[%ld, %ld], flags=%d", dirfd, pathname,
+                        (times == NULL) ? 0 : times[0].tv_sec, (times == NULL) ? 0 : times[1].tv_sec, flags);
+    RINIT;
+    char *reworked_path = apply_rules_and_cleanup("utimensat", pathname, op_mask);
+
+    int ret = real_utimensat(dirfd, pathname, times, flags);
     free(reworked_path);
     return ret;
 }
@@ -966,16 +943,7 @@ int access(const char *pathname, int mode) {
     uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
     ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG, "access called: pathname=%s, mode=%d", pathname, mode);
     RINIT;
-    char               *reworked_path = NULL;
-    compiled_mapping_t *return_rules;
-    pcre2_match_data   *return_pcre_match = NULL;
-    int                 num_rules         = 0;
-    ldfl_find_matching_rules("access", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
-    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    pcre2_match_data_free(return_pcre_match);
-    if (num_rules > 0) {
-        free(return_rules);
-    };
+    char *reworked_path = apply_rules_and_cleanup("access", pathname, op_mask);
 
     int ret = real_access(reworked_path, mode);
     free(reworked_path);
@@ -987,16 +955,7 @@ int fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags) {
     ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG, "fstatat called: dirfd=%d, pathname=%s, flags=%d", dirfd, pathname,
                         flags);
     RINIT;
-    char               *reworked_path = NULL;
-    compiled_mapping_t *return_rules;
-    pcre2_match_data   *return_pcre_match = NULL;
-    int                 num_rules         = 0;
-    ldfl_find_matching_rules("fstatat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
-    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    pcre2_match_data_free(return_pcre_match);
-    if (num_rules > 0) {
-        free(return_rules);
-    };
+    char *reworked_path = apply_rules_and_cleanup("fstatat", pathname, op_mask);
 
     int ret = real_fstatat(dirfd, pathname, statbuf, flags);
     free(reworked_path);
@@ -1007,16 +966,7 @@ int __xstat(int version, const char *pathname, struct stat *statbuf) {
     uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
     ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG, "__xstat called: version=%d, pathname=%s", version, pathname);
     RINIT;
-    char               *reworked_path = NULL;
-    compiled_mapping_t *return_rules;
-    pcre2_match_data   *return_pcre_match = NULL;
-    int                 num_rules         = 0;
-    ldfl_find_matching_rules("__xstat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
-    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    pcre2_match_data_free(return_pcre_match);
-    if (num_rules > 0) {
-        free(return_rules);
-    };
+    char *reworked_path = apply_rules_and_cleanup("__xstat", pathname, op_mask);
 
     int ret = real___xstat(version, pathname, statbuf);
     free(reworked_path);
@@ -1027,16 +977,7 @@ int __xstat64(int version, const char *pathname, struct stat *statbuf) {
     uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
     ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG, "__xstat64 called: version=%d, pathname=%s", version, pathname);
     RINIT;
-    char               *reworked_path = NULL;
-    compiled_mapping_t *return_rules;
-    pcre2_match_data   *return_pcre_match = NULL;
-    int                 num_rules         = 0;
-    ldfl_find_matching_rules("__xstat64", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
-    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    pcre2_match_data_free(return_pcre_match);
-    if (num_rules > 0) {
-        free(return_rules);
-    };
+    char *reworked_path = apply_rules_and_cleanup("__xstat64", pathname, op_mask);
 
     int ret = real___xstat64(version, pathname, statbuf);
     free(reworked_path);
@@ -1047,16 +988,7 @@ int __lxstat(int version, const char *pathname, struct stat *statbuf) {
     uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
     ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG, "__lxstat called: version=%d, pathname=%s", version, pathname);
     RINIT;
-    char               *reworked_path = NULL;
-    compiled_mapping_t *return_rules;
-    pcre2_match_data   *return_pcre_match = NULL;
-    int                 num_rules         = 0;
-    ldfl_find_matching_rules("__lxstat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
-    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    pcre2_match_data_free(return_pcre_match);
-    if (num_rules > 0) {
-        free(return_rules);
-    };
+    char *reworked_path = apply_rules_and_cleanup("__lxstat", pathname, op_mask);
 
     int ret = real___lxstat(version, pathname, statbuf);
     free(reworked_path);
@@ -1068,40 +1000,9 @@ int __fxstatat(int version, int dirfd, const char *pathname, struct stat *statbu
     ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG, "__fxstatat called: version=%d, dirfd=%d, pathname=%s, flags=%d",
                         version, dirfd, pathname, flags);
     RINIT;
-    char               *reworked_path = NULL;
-    compiled_mapping_t *return_rules;
-    pcre2_match_data   *return_pcre_match = NULL;
-    int                 num_rules         = 0;
-    ldfl_find_matching_rules("__fxstatat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
-    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    pcre2_match_data_free(return_pcre_match);
-    if (num_rules > 0) {
-        free(return_rules);
-    };
+    char *reworked_path = apply_rules_and_cleanup("__fxstatat", pathname, op_mask);
 
     int ret = real___fxstatat(version, dirfd, pathname, statbuf, flags);
-    free(reworked_path);
-    return ret;
-}
-
-int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags) {
-    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_PERM | LDFL_OP_DENY;
-    ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG,
-                        "utimensat called: dirfd=%d, pathname=%s, times=[%ld, %ld], flags=%d", dirfd, pathname,
-                        (times == NULL) ? 0 : times[0].tv_sec, (times == NULL) ? 0 : times[1].tv_sec, flags);
-    RINIT;
-    char               *reworked_path = NULL;
-    compiled_mapping_t *return_rules;
-    pcre2_match_data   *return_pcre_match = NULL;
-    int                 num_rules         = 0;
-    ldfl_find_matching_rules("utimensat", pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
-    ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    pcre2_match_data_free(return_pcre_match);
-    if (num_rules > 0) {
-        free(return_rules);
-    };
-
-    int ret = real_utimensat(dirfd, pathname, times, flags);
     free(reworked_path);
     return ret;
 }
