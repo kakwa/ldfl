@@ -176,12 +176,11 @@ void test_relative_path_with_cwd(void) {
     snprintf(expected, sizeof(expected), "%s/%s", cwd, path);
 
     char *result = ldfl_fullpath(AT_FDCWD, path);
-    // FIXME
-    // CU_ASSERT_PTR_NOT_NULL(result);
-    // if (result) {
-    //     CU_ASSERT_STRING_EQUAL(result, expected);
-    //     free(result);
-    // }
+    CU_ASSERT_PTR_NOT_NULL(result);
+    if (result) {
+        CU_ASSERT_STRING_EQUAL(result, expected);
+        free(result);
+    }
 }
 
 void test_relative_path_with_fd(void) {
@@ -195,12 +194,11 @@ void test_relative_path_with_fd(void) {
         snprintf(expected, sizeof(expected), "%s/%s", dir, file);
 
         char *result = ldfl_fullpath(dirfd, file);
-        // FIXME
-        // CU_ASSERT_PTR_NOT_NULL(result);
-        //	 if (result) {
-        //	     CU_ASSERT_STRING_EQUAL(result, expected);
-        //	     free(result);
-        //	 }
+        CU_ASSERT_PTR_NOT_NULL(result);
+        if (result) {
+            CU_ASSERT_STRING_EQUAL(result, expected);
+            free(result);
+        }
 
         close(dirfd);
     }
@@ -217,16 +215,14 @@ void test_empty_pathname(void) {
     errno        = 0;
     char *result = ldfl_fullpath(AT_FDCWD, "");
     CU_ASSERT_PTR_NULL(result);
-    // FIXME
-    // CU_ASSERT_EQUAL(errno, ENOENT);
+    CU_ASSERT_EQUAL(errno, ENOENT);
 }
 
 void test_nonexistent_path(void) {
     const char *path   = "/nonexistent/path/to/file";
     char       *result = ldfl_fullpath(AT_FDCWD, path);
     CU_ASSERT_PTR_NULL(result);
-    // FIXME
-    // CU_ASSERT_EQUAL(errno, ENOENT);
+    CU_ASSERT_EQUAL(errno, ENOENT);
 }
 
 void test_invalid_fd(void) {
@@ -234,8 +230,7 @@ void test_invalid_fd(void) {
     int         invalid_fd = -1;
     char       *result     = ldfl_fullpath(invalid_fd, path);
     CU_ASSERT_PTR_NULL(result);
-    // FIXME
-    // CU_ASSERT_EQUAL(errno, EBADF);
+    CU_ASSERT_EQUAL(errno, EBADF);
 }
 
 void test_long_pathname(void) {
