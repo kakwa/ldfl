@@ -434,12 +434,13 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t m
             continue;
         }
         int matching_rule_count = 1;
-        for (int j = i + 1; j < ldfl_rule_count; j++) {
-            if (ldfl_compiled_rules[j].matching_regex != NULL) {
-                break;
-            }
-            matching_rule_count++;
-        }
+        // Disable multi-rule for now
+        // for (int j = i + 1; j < ldfl_rule_count; j++) {
+        //     if (ldfl_compiled_rules[j].matching_regex != NULL) {
+        //         break;
+        //     }
+        //     matching_rule_count++;
+        // }
         *return_rules = calloc(sizeof(compiled_mapping_t *), matching_rule_count + 1);
 
         for (int j = 0; j < matching_rule_count; j++) {
