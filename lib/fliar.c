@@ -1014,7 +1014,7 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2], i
     RINIT;
     char *reworked_path = apply_rules_and_cleanup("utimensat", pathname, op_mask);
 
-    int ret = real_utimensat(dirfd, pathname, times, flags);
+    int ret = real_utimensat(dirfd, reworked_path, times, flags);
     LDFL_LOG_ERR(ret == 0, "real_utimensat failed: dirfd=%d, pathname=%s, flags=%d, errno=%d (%s)", dirfd, pathname,
                  flags, errno, strerror(errno));
 
@@ -1043,7 +1043,7 @@ int fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags) {
     RINIT;
     char *reworked_path = apply_rules_and_cleanup("fstatat", pathname, op_mask);
 
-    int ret = real_fstatat(dirfd, pathname, statbuf, flags);
+    int ret = real_fstatat(dirfd, reworked_path, statbuf, flags);
     LDFL_LOG_ERR(ret == 0, "real_fstatat failed: dirfd=%d, pathname=%s, flags=%d, errno=%d (%s)", dirfd, pathname,
                  flags, errno, strerror(errno));
 
@@ -1057,7 +1057,7 @@ int __xstat(int version, const char *pathname, struct stat *statbuf) {
     RINIT;
     char *reworked_path = apply_rules_and_cleanup("__xstat", pathname, op_mask);
 
-    int ret = real___xstat(version, pathname, statbuf);
+    int ret = real___xstat(version, reworked_path, statbuf);
     LDFL_LOG_ERR(ret == 0, "real___xstat failed: version=%d, pathname=%s, errno=%d (%s)", version, pathname, errno,
                  strerror(errno));
 
@@ -1071,7 +1071,7 @@ int __xstat64(int version, const char *pathname, struct stat *statbuf) {
     RINIT;
     char *reworked_path = apply_rules_and_cleanup("__xstat64", pathname, op_mask);
 
-    int ret = real___xstat64(version, pathname, statbuf);
+    int ret = real___xstat64(version, reworked_path, statbuf);
     LDFL_LOG_ERR(ret == 0, "real___xstat64 failed: version=%d, pathname=%s, errno=%d (%s)", version, pathname, errno,
                  strerror(errno));
 
@@ -1085,7 +1085,7 @@ int __lxstat(int version, const char *pathname, struct stat *statbuf) {
     RINIT;
     char *reworked_path = apply_rules_and_cleanup("__lxstat", pathname, op_mask);
 
-    int ret = real___lxstat(version, pathname, statbuf);
+    int ret = real___lxstat(version, reworked_path, statbuf);
     LDFL_LOG_ERR(ret == 0, "real___lxstat failed: version=%d, pathname=%s, errno=%d (%s)", version, pathname, errno,
                  strerror(errno));
 
@@ -1100,7 +1100,7 @@ int __fxstatat(int version, int dirfd, const char *pathname, struct stat *statbu
     RINIT;
     char *reworked_path = apply_rules_and_cleanup("__fxstatat", pathname, op_mask);
 
-    int ret = real___fxstatat(version, dirfd, pathname, statbuf, flags);
+    int ret = real___fxstatat(version, dirfd, reworked_path, statbuf, flags);
     LDFL_LOG_ERR(ret == 0, "real___fxstatat failed: version=%d, dirfd=%d, pathname=%s, flags=%d, errno=%d (%s)",
                  version, dirfd, pathname, flags, errno, strerror(errno));
 
@@ -1120,7 +1120,7 @@ int execve(const char *pathname, char *const argv[], char *const envp[]) {
     char *reworked_path = apply_rules_and_cleanup("execve", pathname, op_mask);
     // TODO argv[0]
 
-    int ret = real_execve(pathname, argv, envp);
+    int ret = real_execve(reworked_path, argv, envp);
     LDFL_LOG_ERR(ret == 0, "real_execve failed: pathname=%s, errno=%d (%s)", pathname, errno, strerror(errno));
 
     free(reworked_path);
@@ -1169,7 +1169,7 @@ int execv(const char *pathname, char *const argv[]) {
     char *reworked_path = apply_rules_and_cleanup("execv", pathname, op_mask);
     // TODO argv[0]
 
-    int ret = real_execv(pathname, argv);
+    int ret = real_execv(reworked_path, argv);
     LDFL_LOG_ERR(ret == 0, "real_execv failed: pathname=%s, errno=%d (%s)", pathname, errno, strerror(errno));
 
     free(reworked_path);
