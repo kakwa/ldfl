@@ -38,6 +38,18 @@
  */
 
 /**
+ * @enum ldfl_path_type_t
+ * @brief flag
+ *
+ * This enumeration defines if we should use the absolute path
+ * or the unaltered path in the transformation.
+ */
+typedef enum {
+    LDFL_PATH_ORIG = 0,
+    LDFL_PATH_ABS  = 1,
+} ldfl_path_type_t;
+
+/**
  * @enum ldfl_log_category_t
  * @brief Bitmask flags for specifying logging categories.
  *
@@ -99,6 +111,7 @@ typedef struct {
     const char      *search_pattern; /**< Matching regex on file/dir path. set to NULL to chain */
     ldfl_operation_t operation;      /**< Operation type. */
     const void      *target;         /**< Replacement regex for the file/dir path. */
+    ldfl_path_type_t path_transform; /**< Use the unaltered or absolute path in the matching*/
     const char      *extra_options;  /**< Extra options options. */
 } ldfl_mapping_t;
 
