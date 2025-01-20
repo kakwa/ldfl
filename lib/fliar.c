@@ -813,6 +813,7 @@ FILE *fopen(const char *restrict pathname, const char *restrict mode) {
     FILE *ret           = real_fopen(reworked_path, mode);
     LDFL_LOG_ERR(ret, "real_fopen failed: pathname=%s, mode=%s, errno=%d (%s)", reworked_path, mode, errno,
                  strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -941,6 +942,7 @@ int renameat2(int olddirfd, const char *oldpath, int newdirfd, const char *newpa
                  "real_renameat2 failed: olddirfd=%d, oldpath=%s, newdirfd=%d, newpath=%s, flags=%d, "
                  "errno=%d (%s)",
                  olddirfd, reworked_oldpath, newdirfd, reworked_newpath, flags, errno, strerror(errno));
+
     free(reworked_oldpath);
     free(reworked_newpath);
     return ret;
@@ -958,6 +960,7 @@ int renameat(int olddirfd, const char *oldpath, int newdirfd, const char *newpat
     int ret = real_renameat(olddirfd, reworked_oldpath, newdirfd, reworked_newpath);
     LDFL_LOG_ERR(ret, "real_renameat failed: olddirfd=%d, oldpath=%s, newdirfd=%d, newpath=%s, errno=%d (%s)", olddirfd,
                  reworked_oldpath, newdirfd, reworked_newpath, errno, strerror(errno));
+
     free(reworked_oldpath);
     free(reworked_newpath);
     return ret;
@@ -1452,6 +1455,7 @@ int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
     int ret = real_fchmodat(dirfd, reworked_path, mode, flags);
     LDFL_LOG_ERR(ret == 0, "real_fchmodat failed: dirfd=%d, pathname=%s, mode=%d, flags=%d, errno=%d (%s)", dirfd,
                  reworked_path, mode, flags, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1468,6 +1472,7 @@ int symlinkat(const char *target, int newdirfd, const char *linkpathname) {
     int ret = real_symlinkat(reworked_target, newdirfd, reworked_linkpathname);
     LDFL_LOG_ERR(ret == 0, "real_symlinkat failed: target=%s, newdirfd=%d, linkpathname=%s, errno=%d (%s)",
                  reworked_target, newdirfd, reworked_linkpathname, errno, strerror(errno));
+
     free(reworked_target);
     free(reworked_linkpathname);
     return ret;
@@ -1483,6 +1488,7 @@ int mkfifo(const char *pathname, mode_t mode) {
     int ret = real_mkfifo(reworked_path, mode);
     LDFL_LOG_ERR(ret == 0, "real_mkfifo failed: pathname=%s, mode=%d, errno=%d (%s)", reworked_path, mode, errno,
                  strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1498,6 +1504,7 @@ int mkfifoat(int dirfd, const char *pathname, mode_t mode) {
     int ret = real_mkfifoat(dirfd, reworked_path, mode);
     LDFL_LOG_ERR(ret == 0, "real_mkfifoat failed: dirfd=%d, pathname=%s, mode=%d, errno=%d (%s)", dirfd, reworked_path,
                  mode, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1513,6 +1520,7 @@ int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev) {
     int ret = real_mknodat(dirfd, reworked_path, mode, dev);
     LDFL_LOG_ERR(ret == 0, "real_mknodat failed: dirfd=%d, pathname=%s, mode=%d, dev=%ld, errno=%d (%s)", dirfd,
                  reworked_path, mode, dev, errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1528,6 +1536,7 @@ int mknod(const char *pathname, mode_t mode, dev_t dev) {
     int ret = real_mknod(reworked_path, mode, dev);
     LDFL_LOG_ERR(ret == 0, "real_mknod failed: pathname=%s, mode=%d, dev=%ld, errno=%d (%s)", reworked_path, mode, dev,
                  errno, strerror(errno));
+
     free(reworked_path);
     return ret;
 }
@@ -1558,8 +1567,8 @@ int creat(const char *pathname, mode_t mode) {
     int ret = real_creat(reworked_path, mode);
     LDFL_LOG_ERR(ret == 0, "real_creat failed: pathname=%s, mode=%d, errno=%d (%s)", reworked_path, mode, errno,
                  strerror(errno));
-    free(reworked_path);
 
+    free(reworked_path);
     return ret;
 }
 
@@ -1575,6 +1584,7 @@ int renamex_np(const char *oldpath, const char *newpath, int flags) {
     int ret = real_renamex_np(reworked_oldpath, reworked_newpath, flags);
     LDFL_LOG_ERR(ret == 0, "real_renamex_np failed: oldpath=%s, newpath=%s, flags=%d, errno=%d (%s)", reworked_oldpath,
                  reworked_newpath, flags, errno, strerror(errno));
+
     free(reworked_oldpath);
     free(reworked_newpath);
     return ret;
@@ -1594,6 +1604,7 @@ int renameatx_np(int olddirfd, const char *oldpath, int newdirfd, const char *ne
                  "real_renameatx_np failed: olddirfd=%d, oldpath=%s, newdirfd=%d, newpath=%s, "
                  "flags=%d, errno=%d (%s)",
                  olddirfd, reworked_oldpath, newdirfd, reworked_newpath, flags, errno, strerror(errno));
+
     free(reworked_oldpath);
     free(reworked_newpath);
     return ret;
