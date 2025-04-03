@@ -1,0 +1,95 @@
+{
+  "settings": {
+    "log_mask": [
+      "mapping_rule_found",
+      "fn_call",
+      "init",
+      "mapping_rule_apply",
+      "fn_call_err"
+    ],
+    "log_level": "debug",
+    "logger": "syslog"
+  },
+  "mappings": [
+    {
+      "name": "temp files redirect",
+      "search_pattern": ".*/temp/([^/]*)$",
+      "operation": "map",
+      "target": "/tmp/$1",
+      "path_transform": "absolute",
+      "extra_options": null
+    },
+    {
+      "name": "inc redirect",
+      "search_pattern": "(.*)/inc/(.*)",
+      "operation": "map",
+      "target": "$1/lib/$2",
+      "path_transform": "absolute",
+      "extra_options": null
+    },
+    {
+      "name": "executable redirect",
+      "search_pattern": ".*/.bin/\\([^/]*\\)$",
+      "operation": "exec_map",
+      "target": "/opt/fliar/bin/\\1",
+      "path_transform": "absolute",
+      "extra_options": null
+    },
+    {
+      "name": "memory open",
+      "search_pattern": ".*/file[0-9].txt",
+      "operation": "mem_open",
+      "target": null,
+      "path_transform": "absolute",
+      "extra_options": null
+    },
+    {
+      "name": "static file",
+      "search_pattern": ".*/static.bin",
+      "operation": "static",
+      "target": "default_blob",
+      "path_transform": "absolute",
+      "extra_options": null
+    },
+    {
+      "name": "change data perm",
+      "search_pattern": ".*/data/.*",
+      "operation": "perm",
+      "target": null,
+      "path_transform": "absolute",
+      "extra_options": "kakwa:kakwa|0700|0600"
+    },
+    {
+      "name": "allow /dev",
+      "search_pattern": "^/dev/.*",
+      "operation": "noop",
+      "target": null,
+      "path_transform": "absolute",
+      "extra_options": null
+    },
+    {
+      "name": "allow /proc",
+      "search_pattern": "^/proc/.*",
+      "operation": "noop",
+      "target": null,
+      "path_transform": "absolute",
+      "extra_options": null
+    },
+    {
+      "name": "allow /sys",
+      "search_pattern": "^/sys/.*",
+      "operation": "noop",
+      "target": null,
+      "path_transform": "absolute",
+      "extra_options": null
+    },
+    {
+      "name": "default & deny",
+      "search_pattern": ".*",
+      "operation": "deny",
+      "target": null,
+      "path_transform": "absolute",
+      "extra_options": null
+    }
+  ]
+} 

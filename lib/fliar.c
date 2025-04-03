@@ -171,9 +171,6 @@ typedef struct {
     pcre2_code           *matching_regex; // Compiled matching regex
 } compiled_mapping_t;
 
-// Example default blob data
-static const unsigned char ldf_default_blob[] = "hello from ld-fliar";
-
 uint64_t              ldfl_rule_count;
 extern ldfl_setting_t ldfl_setting;
 
@@ -282,12 +279,12 @@ char *ldfl_render_nullable_array(char *const list[]) {
 // Global var for compiled regexp
 compiled_mapping_t *ldfl_compiled_rules;
 
-// TODO remove
-#define FLIAR_STATIC_CONFIG
-
+// If static configuration
 #ifdef FLIAR_STATIC_CONFIG
-// TODO fix pathname
-#include "../cfg/ldfl-config.h"
+#include FLIAR_STATIC_CONFIG
+#else
+// else json/dynamic configuration
+#include "config_json.h"
 #endif
 
 #define LDFL_MAX_ARGS 8 // Limit to a maximum of 8 arguments for simplicity
@@ -377,6 +374,7 @@ uint64_t ldfl_get_rule_count() {
 
 // Regex compilation
 void ldfl_regex_init() {
+
     ldfl_rule_count = ldfl_get_rule_count();
 
     ldfl_compiled_rules = calloc(sizeof(compiled_mapping_t), ldfl_rule_count);
@@ -547,6 +545,7 @@ void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_ma
         stpcpy(*pathname_out, pathname_in);
         return;
     }
+    char *new_pathname;
     for (int i = 0; i < num_rules; i++) {
         switch (mapping_rules[i].mapping->operation) {
         case LDFL_OP_NOOP:
@@ -556,7 +555,7 @@ void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_ma
             break;
         case LDFL_OP_MAP:
             // Extract the target replacement pattern.
-            char      *new_pathname    = calloc(sizeof(char), PATH_MAX);
+            new_pathname               = calloc(sizeof(char), PATH_MAX);
             PCRE2_SIZE replacement_len = PATH_MAX;
 
             // Perform the substitution and store the result.
@@ -713,9 +712,16 @@ int (*real_renameatx_np)(int olddirfd, const char *oldpath, int newdirfd, const 
 // dlsym the real libc functions & compile the matching regex
 // FIXME concurrency issue
 static void __attribute__((constructor(101))) ldfl_init() {
+
+#ifndef FLIAR_STATIC_CONFIG
+    const char *config_path = getenv("LDFL_CONF");
+    assert(config_path && "LDFL_CONF environment variable is not set");
+    int result = ldfl_parse_json_config(config_path);
+    assert(result == 0 && "Failed to load JSON config");
+#endif
+
     ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ld-fliar init called");
     ldfl_regex_init();
-
     REAL(fopen);
     REAL(fopen64);
     REAL(freopen);
@@ -769,7 +775,6 @@ static void __attribute__((constructor(101))) ldfl_init() {
     REAL(mkfifoat);
     REAL(mknod);
     REAL(mknodat);
-
 #if defined(__APPLE__)
     REAL(renamex_np);
     REAL(renameatx_np);
@@ -802,6 +807,9 @@ char *apply_rules_and_cleanup(char *func_name, const char *pathname, uint64_t op
 static void __attribute__((destructor(101))) ldfl_dinit() {
     ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ld-fliar dinit called");
     ldfl_regex_free();
+#ifndef FLIAR_STATIC_CONFIG
+    ldfl_free_json_config();
+#endif
     ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "freed");
 }
 

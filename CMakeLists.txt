@@ -10,6 +10,7 @@ set(fliar_VERSION_PATCH 0)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 find_package(PCRE2 REQUIRED)
+find_package(Jansson REQUIRED)
 find_library(CUNIT_LIBRARY cunit)
 
 set(fliar_VERSION
@@ -75,7 +76,7 @@ link_directories(${CMAKE_BINARY_DIR}/ /usr/local/lib /usr/lib/)
 
 # headers directories
 include_directories(./inc/ ${ZLIB_INCLUDE_DIRS} ${PCRE2_INCLUDE_DIRS}
-                    /usr/include/ /sw/include/)
+                    ${JANSSON_INCLUDE_DIRS} /usr/include/ /sw/include/)
 
 file(GLOB fliar_SOURCES lib/*.c)
 add_library(fliar ${SHARED} ${fliar_SOURCES})
@@ -84,9 +85,9 @@ set_target_properties(fliar PROPERTIES VERSION ${fliar_VERSION}
 
 # Compile the executable
 add_executable(fliar-cli fliar.c)
-target_link_libraries(fliar ${PCRE2_LIBRARY})
+target_link_libraries(fliar ${PCRE2_LIBRARY} ${JANSSON_LIBRARY})
 
-target_link_libraries(fliar-cli fliar ${PCRE2_LIBRARY})
+target_link_libraries(fliar-cli fliar ${PCRE2_LIBRARY} ${JANSSON_LIBRARY})
 
 if(BUILD_TESTS)
   if(CUNIT_LIBRARY)
