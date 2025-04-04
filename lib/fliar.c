@@ -374,7 +374,6 @@ uint64_t ldfl_get_rule_count() {
 
 // Regex compilation
 void ldfl_regex_init() {
-
     ldfl_rule_count = ldfl_get_rule_count();
 
     ldfl_compiled_rules = calloc(sizeof(compiled_mapping_t), ldfl_rule_count);
@@ -712,12 +711,12 @@ int (*real_renameatx_np)(int olddirfd, const char *oldpath, int newdirfd, const 
 // dlsym the real libc functions & compile the matching regex
 // FIXME concurrency issue
 static void __attribute__((constructor(101))) ldfl_init() {
-
 #ifndef LDFL_CONFIG
     const char *config_path = getenv("LDFL_CONFIG");
-    assert(config_path == NULL && "LDFL_CONFIG environment variable is not set");
-    int result = ldfl_parse_json_config(config_path);
-    assert(result == 0 && "Failed to load JSON config");
+    if (config_path == NULL)
+        ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "LDFL_CONFIG environment variable is not set");
+    if (config_path != NULL && ldfl_parse_json_config(config_path))
+        ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "Failed to load JSON config '%s'", config_path);
 #endif
 
     ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ld-fliar init called");
