@@ -2,9 +2,22 @@
 #include <string.h>
 #include <stdlib.h>
 
-ldfl_mapping_t *ldfl_mapping;
+// Default  Mapping
+ldfl_mapping_t default_default[] = {
+    /* name                   search_pattern          operation         target                path_transform,
+       extra_options         */
+    {"default noop rule", ".*", LDFL_OP_NOOP, NULL, LDFL_PATH_ABS, NULL},
+    {NULL, NULL, LDFL_OP_END, NULL, LDFL_PATH_ABS, NULL} // keep this last value
+};
 
-ldfl_setting_t ldfl_setting;
+ldfl_mapping_t *ldfl_mapping = default_default;
+
+ldfl_setting_t ldfl_setting = {
+    .log_mask = LDFL_LOG_MAPPING_RULE_FOUND | LDFL_LOG_FN_CALL | LDFL_LOG_INIT | LDFL_LOG_MAPPING_RULE_APPLY |
+                LDFL_LOG_FN_CALL_ERR,
+    .log_level = LOG_DEBUG,
+    .logger    = ldfl_stderr_logger,
+};
 
 // Helper function to convert JSON string to operation type
 static ldfl_operation_t json_to_operation(const char *op_str) {
@@ -91,7 +104,8 @@ int ldfl_parse_json_config(const char *config_file) {
     json_error_t error;
     json_t      *root = json_load_file(config_file, 0, &error);
     if (!root) {
-        fprintf(stderr, "Error parsing JSON config: %s (line %d, column %d)\n", error.text, error.line, error.column);
+        fprintf(stderr, "Error parsing JSON config '%s': %s (line %d, column %d)\n", config_file, error.text,
+                error.line, error.column);
         return -1;
     }
 
