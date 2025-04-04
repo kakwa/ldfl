@@ -61,6 +61,7 @@ fliar-cli
 fliar-test
 fliar-test-mapping
 fliar-test-utils
+fliar-test-config
 Testing/
 coverage/
 coverage.base
