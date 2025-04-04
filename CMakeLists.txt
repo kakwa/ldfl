@@ -96,11 +96,11 @@ if(BUILD_TESTS)
     include_directories(./lib ./utils)
     add_test(NAME fliar-test-utils COMMAND fliar-test-utils)
     add_executable(fliar-test-utils tests/tests-utils.c)
-    target_link_libraries(fliar-test-utils ${PCRE2_LIBRARY} ${CUNIT_LIBRARY})
+    target_link_libraries(fliar-test-utils ${PCRE2_LIBRARY} ${CUNIT_LIBRARY} ${JANSSON_LIBRARY})
 
     add_test(NAME fliar-test-mapping COMMAND fliar-test-mapping)
     add_executable(fliar-test-mapping tests/tests-mapping.c)
-    target_link_libraries(fliar-test-mapping ${PCRE2_LIBRARY} ${CUNIT_LIBRARY})
+    target_link_libraries(fliar-test-mapping ${PCRE2_LIBRARY} ${CUNIT_LIBRARY} ${JANSSON_LIBRARY})
 
     # Add the test target
     add_custom_target(

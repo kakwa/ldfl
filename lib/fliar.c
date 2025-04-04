@@ -280,8 +280,8 @@ char *ldfl_render_nullable_array(char *const list[]) {
 compiled_mapping_t *ldfl_compiled_rules;
 
 // If static configuration
-#ifdef FLIAR_STATIC_CONFIG
-#include FLIAR_STATIC_CONFIG
+#ifdef LDFL_CONFIG
+#include LDFL_CONFIG
 #else
 // else json/dynamic configuration
 #include "config_json.h"
@@ -713,9 +713,9 @@ int (*real_renameatx_np)(int olddirfd, const char *oldpath, int newdirfd, const 
 // FIXME concurrency issue
 static void __attribute__((constructor(101))) ldfl_init() {
 
-#ifndef FLIAR_STATIC_CONFIG
-    const char *config_path = getenv("LDFL_CONF");
-    assert(config_path && "LDFL_CONF environment variable is not set");
+#ifndef LDFL_CONFIG
+    const char *config_path = getenv("LDFL_CONFIG");
+    assert(config_path == NULL && "LDFL_CONFIG environment variable is not set");
     int result = ldfl_parse_json_config(config_path);
     assert(result == 0 && "Failed to load JSON config");
 #endif
@@ -807,7 +807,7 @@ char *apply_rules_and_cleanup(char *func_name, const char *pathname, uint64_t op
 static void __attribute__((destructor(101))) ldfl_dinit() {
     ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ld-fliar dinit called");
     ldfl_regex_free();
-#ifndef FLIAR_STATIC_CONFIG
+#ifndef LDFL_CONFIG
     ldfl_free_json_config();
 #endif
     ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "freed");
