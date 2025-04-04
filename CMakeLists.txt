@@ -96,15 +96,18 @@ if(BUILD_TESTS)
     include_directories(./lib ./utils)
     add_test(NAME fliar-test-utils COMMAND fliar-test-utils)
     add_executable(fliar-test-utils tests/tests-utils.c)
-    target_link_libraries(fliar-test-utils ${PCRE2_LIBRARY} ${CUNIT_LIBRARY} ${JANSSON_LIBRARY})
+    target_link_libraries(fliar-test-utils ${PCRE2_LIBRARY} ${CUNIT_LIBRARY}
+                          ${JANSSON_LIBRARY})
 
     add_test(NAME fliar-test-mapping COMMAND fliar-test-mapping)
     add_executable(fliar-test-mapping tests/tests-mapping.c)
-    target_link_libraries(fliar-test-mapping ${PCRE2_LIBRARY} ${CUNIT_LIBRARY} ${JANSSON_LIBRARY})
+    target_link_libraries(fliar-test-mapping ${PCRE2_LIBRARY} ${CUNIT_LIBRARY}
+                          ${JANSSON_LIBRARY})
 
     add_test(NAME fliar-test-config COMMAND fliar-test-config)
     add_executable(fliar-test-config tests/tests-config.c)
-    target_link_libraries(fliar-test-config fliar ${PCRE2_LIBRARY} ${CUNIT_LIBRARY} ${JANSSON_LIBRARY})
+    target_link_libraries(fliar-test-config fliar ${PCRE2_LIBRARY}
+                          ${CUNIT_LIBRARY} ${JANSSON_LIBRARY})
 
     # Add the test target
     add_custom_target(
@@ -114,7 +117,8 @@ if(BUILD_TESTS)
       COMMAND fliar-test-config
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       COMMENT "Running tests")
-    add_dependencies(tests fliar-test-utils fliar-test-mapping fliar-test-config)
+    add_dependencies(tests fliar-test-utils fliar-test-mapping
+                     fliar-test-config)
 
     if(COVERAGE)
       set(CMAKE_BUILD_TYPE Debug)
@@ -132,7 +136,8 @@ if(BUILD_TESTS)
         fliar-test-mapping
         fliar-test-config)
 
-      add_dependencies(coverage fliar-test-utils fliar-test-mapping fliar-test-config)
+      add_dependencies(coverage fliar-test-utils fliar-test-mapping
+                       fliar-test-config)
     endif(COVERAGE)
 
   else(CUNIT_LIBRARY)
