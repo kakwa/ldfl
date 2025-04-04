@@ -7,7 +7,7 @@
       "mapping_rule_apply",
       "fn_call_err"
     ],
-    "log_level": "debug",
+    "log_level": "warning",
     "logger": "syslog"
   },
   "mappings": [

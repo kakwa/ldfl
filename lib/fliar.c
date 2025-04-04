@@ -625,14 +625,15 @@ void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_ma
     assert(real_##f != NULL)
 
 #define RINIT                                                                                                          \
-    if (!ldfl_is_init) {                                                                                               \
+    if (!ldfl_initialized && !ldfl_in_init) {                                                                          \
         ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ld-fliar init did not run, re-init");                           \
         ldfl_init();                                                                                                   \
     };
 
 // Flag to check if ldfl is properly initialized
 // FIXME concurrency issue, add some locking when doing the init
-bool ldfl_is_init;
+bool ldfl_initialized;
+bool ldfl_in_init;
 
 // libc functions doing the real job
 FILE *(*real_fopen)(const char *restrict pathname, const char *restrict mode);
@@ -711,16 +712,8 @@ int (*real_renameatx_np)(int olddirfd, const char *oldpath, int newdirfd, const 
 // dlsym the real libc functions & compile the matching regex
 // FIXME concurrency issue
 static void __attribute__((constructor(101))) ldfl_init() {
-#ifndef LDFL_CONFIG
-    const char *config_path = getenv("LDFL_CONFIG");
-    if (config_path == NULL)
-        ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "LDFL_CONFIG environment variable is not set");
-    if (config_path != NULL && ldfl_parse_json_config(config_path))
-        ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "Failed to load JSON config '%s'", config_path);
-#endif
+    ldfl_in_init = true;
 
-    ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ld-fliar init called");
-    ldfl_regex_init();
     REAL(fopen);
     REAL(fopen64);
     REAL(freopen);
@@ -778,7 +771,18 @@ static void __attribute__((constructor(101))) ldfl_init() {
     REAL(renamex_np);
     REAL(renameatx_np);
 #endif
-    ldfl_is_init = true;
+#ifndef LDFL_CONFIG
+    const char *config_path = getenv("LDFL_CONFIG");
+    if (config_path == NULL)
+        ldfl_setting.logger(LDFL_LOG_INIT, LOG_WARNING, "LDFL_CONFIG environment variable is not set");
+    if (config_path != NULL && ldfl_parse_json_config(config_path))
+        ldfl_setting.logger(LDFL_LOG_INIT, LOG_WARNING, "Failed to load JSON config '%s'", config_path);
+#endif
+    ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ld-fliar init called");
+    ldfl_regex_init();
+
+    ldfl_initialized = true;
+    ldfl_in_init     = false;
     ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "initialized");
 }
 

@@ -13,9 +13,8 @@ ldfl_mapping_t default_default[] = {
 ldfl_mapping_t *ldfl_mapping = default_default;
 
 ldfl_setting_t ldfl_setting = {
-    .log_mask = LDFL_LOG_MAPPING_RULE_FOUND | LDFL_LOG_FN_CALL | LDFL_LOG_INIT | LDFL_LOG_MAPPING_RULE_APPLY |
-                LDFL_LOG_FN_CALL_ERR,
-    .log_level = LOG_DEBUG,
+    .log_mask  = LDFL_LOG_INIT,
+    .log_level = LOG_INFO,
     .logger    = ldfl_stderr_logger,
 };
 
@@ -184,7 +183,7 @@ int ldfl_parse_json_config(const char *config_file) {
 
 // Free allocated memory from JSON config
 void ldfl_free_json_config(void) {
-    if (ldfl_mapping) {
+    if (ldfl_mapping && ldfl_mapping != default_default) {
         for (int i = 0; ldfl_mapping[i].operation != LDFL_OP_END; i++) {
             free((void *)ldfl_mapping[i].name);
             free((void *)ldfl_mapping[i].search_pattern);
