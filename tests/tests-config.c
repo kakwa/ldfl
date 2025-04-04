@@ -1,5 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #define _XOPEN_SOURCE 700
+#define LDLF_UTILS_TESTING
+
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 #include <stdio.h>
@@ -8,7 +10,6 @@
 #include <syslog.h>
 #include <jansson.h>
 
-#define LDLF_UTILS_TESTING
 #include "../lib/fliar.c"
 
 // Test fixture setup and teardown
@@ -17,7 +18,6 @@ static int setup(void) {
 }
 
 static int teardown(void) {
-    ldfl_free_json_config();
     return 0;
 }
 
@@ -62,47 +62,47 @@ void test_json_to_log_mask(void) {
     json_t *mask_array = json_array();
     json_array_append_new(mask_array, json_string("mapping_rule_found"));
     json_array_append_new(mask_array, json_string("fn_call"));
-    
+
     uint64_t mask = json_to_log_mask(mask_array);
     CU_ASSERT(mask & LDFL_LOG_MAPPING_RULE_FOUND);
     CU_ASSERT(mask & LDFL_LOG_FN_CALL);
     CU_ASSERT_FALSE(mask & LDFL_LOG_INIT);
-    
+
     json_decref(mask_array);
 }
 
 void test_parse_valid_config(void) {
     const char *test_config = "{\n"
-                             "  \"settings\": {\n"
-                             "    \"log_mask\": [\"mapping_rule_found\", \"fn_call\"],\n"
-                             "    \"log_level\": \"debug\",\n"
-                             "    \"logger\": \"syslog\"\n"
-                             "  },\n"
-                             "  \"mappings\": [\n"
-                             "    {\n"
-                             "      \"name\": \"test_mapping\",\n"
-                             "      \"search_pattern\": \"test.*\",\n"
-                             "      \"operation\": \"map\",\n"
-                             "      \"target\": \"/test/target\",\n"
-                             "      \"path_transform\": \"absolute\"\n"
-                             "    }\n"
-                             "  ]\n"
-                             "}";
-    
+                              "  \"settings\": {\n"
+                              "    \"log_mask\": [\"mapping_rule_found\", \"fn_call\"],\n"
+                              "    \"log_level\": \"debug\",\n"
+                              "    \"logger\": \"stderr\"\n"
+                              "  },\n"
+                              "  \"mappings\": [\n"
+                              "    {\n"
+                              "      \"name\": \"test_mapping\",\n"
+                              "      \"search_pattern\": \"test.*\",\n"
+                              "      \"operation\": \"map\",\n"
+                              "      \"target\": \"/test/target\",\n"
+                              "      \"path_transform\": \"absolute\"\n"
+                              "    }\n"
+                              "  ]\n"
+                              "}";
+
     FILE *fp = fopen("test_config.json", "w");
     CU_ASSERT_PTR_NOT_NULL_FATAL(fp);
     fprintf(fp, "%s", test_config);
     fclose(fp);
-    
+
     int result = ldfl_parse_json_config("test_config.json");
     CU_ASSERT_EQUAL(result, 0);
-    
+
     // Verify settings
     CU_ASSERT(ldfl_setting.log_mask & LDFL_LOG_MAPPING_RULE_FOUND);
     CU_ASSERT(ldfl_setting.log_mask & LDFL_LOG_FN_CALL);
     CU_ASSERT_EQUAL(ldfl_setting.log_level, LOG_DEBUG);
-    CU_ASSERT_EQUAL(ldfl_setting.logger, ldfl_syslog_logger);
-    
+    CU_ASSERT_EQUAL(ldfl_setting.logger, ldfl_stderr_logger);
+
     // Verify mappings
     CU_ASSERT_PTR_NOT_NULL(ldfl_mapping);
     CU_ASSERT_STRING_EQUAL(ldfl_mapping[0].name, "test_mapping");
@@ -110,31 +110,31 @@ void test_parse_valid_config(void) {
     CU_ASSERT_EQUAL(ldfl_mapping[0].operation, LDFL_OP_MAP);
     CU_ASSERT_STRING_EQUAL(ldfl_mapping[0].target, "/test/target");
     CU_ASSERT_EQUAL(ldfl_mapping[0].path_transform, LDFL_PATH_ABS);
-    
+
     remove("test_config.json");
 }
 
 void test_parse_invalid_config(void) {
     const char *invalid_config = "{\n"
-                                "  \"settings\": {\n"
-                                "    \"log_mask\": [\"invalid_mask\"],\n"
-                                "    \"log_level\": \"invalid_level\",\n"
-                                "    \"logger\": \"invalid_logger\"\n"
-                                "  }\n"
-                                "}";
-    
+                                 "  \"settings\": {\n"
+                                 "    \"log_mask\": [\"invalid_mask\"],\n"
+                                 "    \"log_level\": \"invalid_level\",\n"
+                                 "    \"logger\": \"invalid_logger\"\n"
+                                 "  }\n"
+                                 "}";
+
     FILE *fp = fopen("invalid_config.json", "w");
     CU_ASSERT_PTR_NOT_NULL_FATAL(fp);
     fprintf(fp, "%s", invalid_config);
     fclose(fp);
-    
+
     int result = ldfl_parse_json_config("invalid_config.json");
     CU_ASSERT_EQUAL(result, 0); // Should still parse successfully
-    
+
     // Verify default values for invalid settings
     CU_ASSERT_EQUAL(ldfl_setting.log_level, LOG_DEBUG);
     CU_ASSERT_EQUAL(ldfl_setting.logger, ldfl_dummy_logger);
-    
+
     remove("invalid_config.json");
 }
 
@@ -171,4 +171,4 @@ int main() {
     CU_basic_run_tests();
     CU_cleanup_registry();
     return CU_get_error();
-} 
+}
