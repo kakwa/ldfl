@@ -413,10 +413,17 @@ void ldfl_regex_free() {
 }
 
 bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t mask, compiled_mapping_t **return_rules,
-                              int *num_rules, pcre2_match_data **return_pcre_match) {
+                              int *num_rules, pcre2_match_data ***return_pcre_match) {
     if (pathname == NULL) {
         return false;
     }
+
+    int matching_rule_count = 0;
+
+    // FIXME somewhat suboptimal allocation
+    // We should not allocate that much (it's the worst case if all rules match)
+    *return_rules      = calloc(sizeof(compiled_mapping_t *), ldfl_rule_count);
+    *return_pcre_match = calloc(sizeof(pcre2_match_data *), ldfl_rule_count);
     for (int i = 0; i < ldfl_rule_count; i++) {
         // Rule not matching
         if (!(ldfl_compiled_rules[i].mapping->operation & mask) || (ldfl_compiled_rules[i].matching_regex == NULL)) {
@@ -443,27 +450,16 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t m
             pcre2_match_data_free(match_data);
             continue;
         }
-        int matching_rule_count = 1;
-        // Disable multi-rule for now
-        // for (int j = i + 1; j < ldfl_rule_count; j++) {
-        //     if (ldfl_compiled_rules[j].matching_regex != NULL) {
-        //         break;
-        //     }
-        //     matching_rule_count++;
-        // }
-        *return_rules = calloc(sizeof(compiled_mapping_t *), matching_rule_count + 1);
 
-        for (int j = 0; j < matching_rule_count; j++) {
-            (*return_rules)[j] = ldfl_compiled_rules[j + i];
-            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_FOUND, LOG_INFO,
-                                "rule[%s] match pathname '%s', selected for call '%s'", ldfl_mapping[i].name, pathname,
-                                call);
-        }
-        *num_rules         = matching_rule_count;
-        *return_pcre_match = match_data;
-        return true;
+        (*return_rules)[matching_rule_count]      = ldfl_compiled_rules[i];
+        (*return_pcre_match)[matching_rule_count] = match_data;
+        ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_FOUND, LOG_INFO,
+                            "rule[%s] match pathname '%s', selected for call '%s'", ldfl_mapping[i].name, pathname,
+                            call);
+        matching_rule_count++;
     }
-    return false;
+    *num_rules = matching_rule_count;
+    return (*num_rules != 0);
 }
 
 char *ldfl_fullpath(int dirfd, const char *pathname) {
@@ -551,7 +547,7 @@ static char *ldfl_substitute_path(pcre2_code *regex, pcre2_match_data *match_dat
     return new_pathname;
 }
 
-void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_match_data *match_group,
+void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_match_data **match_group,
                       const char *pathname_in, char **pathname_out) {
     if (pathname_in == NULL) {
         *pathname_out = calloc(sizeof(char), 1);
@@ -573,7 +569,7 @@ void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_ma
             stpcpy(*pathname_out, pathname_in);
             break;
         case LDFL_OP_MAP:
-            new_pathname = ldfl_substitute_path(mapping_rules[i].matching_regex, match_group, pathname_in,
+            new_pathname = ldfl_substitute_path(mapping_rules[i].matching_regex, match_group[i], pathname_in,
                                                 mapping_rules[i].mapping->target);
             if (!new_pathname) {
                 ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING,
@@ -589,7 +585,7 @@ void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_ma
                                 mapping_rules[i].mapping->name, pathname_in, *pathname_out);
             break;
         case LDFL_OP_EXEC_MAP:
-            new_pathname = ldfl_substitute_path(mapping_rules[i].matching_regex, match_group, pathname_in,
+            new_pathname = ldfl_substitute_path(mapping_rules[i].matching_regex, match_group[i], pathname_in,
                                                 mapping_rules[i].mapping->target);
             if (!new_pathname) {
                 ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING,
@@ -812,11 +808,13 @@ static void __attribute__((constructor(101))) ldfl_init() {
 char *apply_rules_and_cleanup(char *func_name, const char *pathname, uint64_t op_mask) {
     char               *reworked_path = NULL;
     compiled_mapping_t *return_rules;
-    pcre2_match_data   *return_pcre_match = NULL;
+    pcre2_match_data  **return_pcre_match = NULL;
     int                 num_rules         = 0;
     ldfl_find_matching_rules(func_name, pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
     ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
-    pcre2_match_data_free(return_pcre_match);
+    for (int i = 0; i < num_rules; i++) {
+        pcre2_match_data_free(return_pcre_match[i]);
+    }
     if (num_rules > 0) {
         free(return_rules);
     }
