@@ -35,12 +35,6 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         path-to-lcov: coverage.info
 
-    - name: Upload Coverage Report
-      uses: coverallsapp/github-action@v1.1.2
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        path-to-lcov: coverage.info
-        
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
       env:
