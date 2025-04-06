@@ -1,5 +1,4 @@
-
-name: Ubuntu-x86_64
+name: Memory Leak Check
 
 on:
   push:
@@ -20,9 +19,9 @@ jobs:
     - name: Install packages
       run: |
         sudo apt update
-        sudo apt install cmake libpcre2-dev clang lcov libcunit1-dev valgrind
+        sudo apt install -y cmake libpcre2-dev clang lcov libcunit1-dev libjansson-dev valgrind
     - name: Configure CMake
-      run: cmake -DCOVERAGE=ON -DBUILD_TESTS=ON .
+      run: cmake -DBUILD_TESTS=ON .
     - name: Build
       run: make
     - name: Coverage
@@ -33,3 +32,4 @@ jobs:
       run: |
         valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes --track-origins=yes --error-exitcode=42 ./fliar-test-mapping
         valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes --track-origins=yes --error-exitcode=42 ./fliar-test-utils
+        valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes --track-origins=yes --error-exitcode=42 ./fliar-test-config
