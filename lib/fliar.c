@@ -530,6 +530,27 @@ char *ldfl_fullpath(int dirfd, const char *pathname) {
     return resolved_path;
 }
 
+// Helper function for path substitution
+static char *ldfl_substitute_path(pcre2_code *regex, pcre2_match_data *match_data, const char *pathname,
+                                  const char *target) {
+    char *new_pathname = calloc(sizeof(char), PATH_MAX);
+    if (!new_pathname) {
+        return NULL;
+    }
+
+    PCRE2_SIZE replacement_len = PATH_MAX;
+    int        rc = pcre2_substitute(regex, (PCRE2_SPTR)pathname, PCRE2_ZERO_TERMINATED, 0, PCRE2_SUBSTITUTE_GLOBAL,
+                                     match_data, NULL, (PCRE2_SPTR)target, PCRE2_ZERO_TERMINATED, (PCRE2_UCHAR *)new_pathname,
+                                     &replacement_len);
+
+    if (rc < 0 || replacement_len <= 0) {
+        free(new_pathname);
+        return NULL;
+    }
+
+    return new_pathname;
+}
+
 void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_match_data *match_group,
                       const char *pathname_in, char **pathname_out) {
     if (pathname_in == NULL) {
@@ -550,22 +571,14 @@ void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_ma
         case LDFL_OP_NOOP:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
-            return; // FIXME (don't only apply the first rule)
             break;
         case LDFL_OP_MAP:
-            // Extract the target replacement pattern.
-            new_pathname               = calloc(sizeof(char), PATH_MAX);
-            PCRE2_SIZE replacement_len = PATH_MAX;
-
-            // Perform the substitution and store the result.
-            pcre2_substitute(mapping_rules[i].matching_regex, (PCRE2_SPTR)pathname_in, PCRE2_ZERO_TERMINATED, 0,
-                             PCRE2_SUBSTITUTE_GLOBAL, match_group, NULL, (PCRE2_SPTR)mapping_rules[i].mapping->target,
-                             PCRE2_ZERO_TERMINATED, (PCRE2_UCHAR *)new_pathname, &replacement_len);
-            if (replacement_len <= 0) {
+            new_pathname = ldfl_substitute_path(mapping_rules[i].matching_regex, match_group, pathname_in,
+                                                mapping_rules[i].mapping->target);
+            if (!new_pathname) {
                 ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING,
                                     "Replacement in path failed for rule '%s' on path '%s'",
                                     mapping_rules[i].mapping->name, pathname_in);
-                free(new_pathname);
                 *pathname_out = NULL;
                 return;
             }
@@ -574,37 +587,42 @@ void ldfl_apply_rules(compiled_mapping_t *mapping_rules, int num_rules, pcre2_ma
             ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_DEBUG,
                                 "LDFL_OP_MAP Rule [%s] applied, path '%s' rewritten to '%s'",
                                 mapping_rules[i].mapping->name, pathname_in, *pathname_out);
-            return; // FIXME (don't only apply the first rule)
             break;
         case LDFL_OP_EXEC_MAP:
-            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING, "Operation LDFL_OP_EXEC_MAP not yet handle");
-            *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
-            stpcpy(*pathname_out, pathname_in);
-            return; // FIXME (don't only apply the first rule)
+            new_pathname = ldfl_substitute_path(mapping_rules[i].matching_regex, match_group, pathname_in,
+                                                mapping_rules[i].mapping->target);
+            if (!new_pathname) {
+                ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING,
+                                    "Replacement in executable path failed for rule '%s' on path '%s'",
+                                    mapping_rules[i].mapping->name, pathname_in);
+                *pathname_out = NULL;
+                return;
+            }
+            *pathname_out = new_pathname;
+
+            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_DEBUG,
+                                "LDFL_OP_EXEC_MAP Rule [%s] applied, executable path '%s' rewritten to '%s'",
+                                mapping_rules[i].mapping->name, pathname_in, *pathname_out);
             break;
         case LDFL_OP_MEM_OPEN:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
             ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING, "Operation LDFL_OP_MEM_OPEN not yet handle");
-            return; // FIXME (don't only apply the first rule)
             break;
         case LDFL_OP_STATIC:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
             ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING, "Operation LDFL_OP_STATIC not yet handle");
-            return; // FIXME (don't only apply the first rule)
             break;
         case LDFL_OP_PERM:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
             ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING, "Operation LDFL_OP_PERM not yet handle");
-            return; // FIXME (don't only apply the first rule)
             break;
         case LDFL_OP_DENY:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
             ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING, "Operation LDFL_OP_DENY not yet handle");
-            return; // FIXME (don't only apply the first rule)
             break;
         default:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
@@ -1146,11 +1164,21 @@ int execve(const char *pathname, char *const argv[], char *const envp[]) {
     free(envp_str);
     RINIT;
     char *reworked_path = apply_rules_and_cleanup("execve", pathname, op_mask);
-    // TODO argv[0]
+
+    // Temporarily swap argv[0] if path was remapped
+    char *original_argv0 = NULL;
+    if (reworked_path && strcmp(pathname, reworked_path) != 0 && argv[0]) {
+        original_argv0     = argv[0];
+        ((char **)argv)[0] = reworked_path;
+    }
 
     int ret = real_execve(reworked_path, argv, envp);
-    LDFL_LOG_ERR(ret == 0, "real_execve failed: pathname=%s, errno=%d (%s)", pathname, errno, strerror(errno));
+    LDFL_LOG_ERR(ret == 0, "real_execve failed: pathname=%s, errno=%d (%s)", reworked_path, errno, strerror(errno));
 
+    // Restore original argv[0] if we swapped it
+    if (original_argv0) {
+        ((char **)argv)[0] = original_argv0;
+    }
     free(reworked_path);
     return ret;
 }
@@ -1195,11 +1223,21 @@ int execv(const char *pathname, char *const argv[]) {
     free(argv_str);
     RINIT;
     char *reworked_path = apply_rules_and_cleanup("execv", pathname, op_mask);
-    // TODO argv[0]
+
+    // Temporarily swap argv[0] if path was remapped
+    char *original_argv0 = NULL;
+    if (reworked_path && strcmp(pathname, reworked_path) != 0 && argv[0]) {
+        original_argv0     = argv[0];
+        ((char **)argv)[0] = reworked_path;
+    }
 
     int ret = real_execv(reworked_path, argv);
-    LDFL_LOG_ERR(ret == 0, "real_execv failed: pathname=%s, errno=%d (%s)", pathname, errno, strerror(errno));
+    LDFL_LOG_ERR(ret == 0, "real_execv failed: pathname=%s, errno=%d (%s)", reworked_path, errno, strerror(errno));
 
+    // Restore original argv[0] if we swapped it
+    if (original_argv0) {
+        ((char **)argv)[0] = original_argv0;
+    }
     free(reworked_path);
     return ret;
 }
@@ -1211,11 +1249,21 @@ int execvp(const char *file, char *const argv[]) {
     free(argv_str);
     RINIT;
     char *reworked_path = apply_rules_and_cleanup("execvp", file, op_mask);
-    // TODO argv[0]
+
+    // Temporarily swap argv[0] if path was remapped
+    char *original_argv0 = NULL;
+    if (reworked_path && strcmp(file, reworked_path) != 0 && argv[0]) {
+        original_argv0     = argv[0];
+        ((char **)argv)[0] = reworked_path;
+    }
 
     int ret = real_execvp(reworked_path, argv);
     LDFL_LOG_ERR(ret == 0, "real_execvp failed: pathname=%s, errno=%d (%s)", reworked_path, errno, strerror(errno));
 
+    // Restore original argv[0] if we swapped it
+    if (original_argv0) {
+        ((char **)argv)[0] = original_argv0;
+    }
     free(reworked_path);
     return ret;
 }
