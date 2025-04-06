@@ -64,6 +64,7 @@ fliar-test-utils
 fliar-test-config
 Testing/
 coverage/
+coverage.info
 coverage.base
 CMakeDoxyfile.in
 CMakeDoxygenDefaults.cmake
