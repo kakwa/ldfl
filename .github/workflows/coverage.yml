@@ -47,5 +47,3 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       with:
         files: ${{github.workspace}}/coverage.info
-
-

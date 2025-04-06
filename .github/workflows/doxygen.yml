@@ -1,4 +1,4 @@
-name: Documentation
+name: Doxygen
 
 # Only run on main
 on:

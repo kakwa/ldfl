@@ -1,4 +1,4 @@
-name: Memory Leak Check
+name: Memleak Check
 
 on:
   push:
@@ -20,14 +20,19 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y cmake libpcre2-dev clang lcov libcunit1-dev libjansson-dev valgrind
+
     - name: Configure CMake
       run: cmake -DBUILD_TESTS=ON .
+
     - name: Build
       run: make
+
     - name: Coverage
       run: make test
+
     - name: Test
       run: make coverage
+
     - name: Memory checks
       run: |
         valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes --track-origins=yes --error-exitcode=42 ./fliar-test-mapping
