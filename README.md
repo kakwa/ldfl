@@ -5,6 +5,10 @@
 [![Unit Tests & Coverage](https://github.com/kakwa/ldfl/actions/workflows/coverage.yml/badge.svg)](https://github.com/kakwa/ldfl/actions/workflows/coverage.yml)
 [![codecov](https://codecov.io/gh/kakwa/ldfl/graph/badge.svg?token=08AAHC625O)](https://codecov.io/gh/kakwa/ldfl)
 
+## Status
+
+This project is under Development, most functionalities are not implemented yet.
+
 ## Presentation
 
 LDFL (LD File Liar) is a powerful `LD_PRELOAD` library that intercepts and modify `libc` file system operations. It allows you to:
@@ -18,6 +22,10 @@ LDFL (LD File Liar) is a powerful `LD_PRELOAD` library that intercepts and modif
 - **Executable Redirection**: Redirect executable paths
 
 This tool can be used on existing binaries or can be included with a static configuration header inside your projects.
+
+## Documentation
+
+You can also view the latest documentation online at [GitHub Pages](https://kakwa.github.io/ldfl/).
 
 ## Dependencies
 
@@ -34,10 +42,6 @@ On Ubuntu/Debian, you can install these dependencies with:
 sudo apt update
 sudo apt install -y cmake libpcre2-dev libjansson-dev libcunit1-dev doxygen
 ```
-
-## Documentation
-
-API documentation is available in the `docs/html` directory after building with `-DBUILD_DOC=ON`. You can also view the latest documentation online at [GitHub Pages](https://kakwa.github.io/ldfl/).
 
 ## Development
 
@@ -64,9 +68,25 @@ Optional build options:
 - `-DDEBUG=ON`: Build with debug symbols
 - `-DSTATIC=ON`: Build static library
 
-Example with all options:
+To run the tests & coverage
 ```bash
-cmake -DBUILD_TESTS=ON -DBUILD_DOC=ON -DCOVERAGE=ON -DDEBUG=ON .
+cmake . -DBUILD_TESTS=ON -DCOVERAGE=ON
+make coverage
+
+$BROWSER coverage/index.html
+```
+
+To build the documentation:
+```bash
+# Configure CMake
+cmake -DBUILD_DOC=ON .
+# Get Doxygen awesome CSS
+./misc/setup_doxycss.sh
+# Build Doc
+make
+
+# open the doc
+$BROWSER ./docs/html/index.html
 ```
 
 ## Installation
@@ -82,14 +102,36 @@ This will install:
 
 ## Usage
 
-### Basic Usage
+### Wrapper Usage
 
 1. Create a configuration file (e.g., `config.json`) with your mapping rules:
 ```bash
 ldfl-cli -c config.json -- your-application [args...]
 ```
 
-## Configuration Options
+To enable debug output, use the `-d` flag:
+```bash
+ldfl-cli -d -c config.json -- your-application [args...]
+```
+
+If you need to specify a custom library path:
+```bash
+ldfl-cli -l /path/to/libldfl.so -c config.json -- your-application [args...]
+```
+
+### Direct `LD_PRELOAD` Usage
+
+You can use LDFL directly with `LD_PRELOAD` without the wrapper:
+
+```bash
+# Set the configuration file
+export LDFL_CONFIG=/path/to/config.json
+
+# Preload the library
+LD_PRELOAD=/path/to/libldfl.so your-application [args...]
+```
+
+## JSON Configuration
 
 The configuration file is a JSON file with two main sections: `settings` and `mappings`.
 
@@ -240,18 +282,41 @@ The `mappings` section defines the file path remapping rules. Each mapping has t
 }
 ```
 
-### Debug Mode
+## Embedding
 
-To enable debug output, use the `-d` flag:
-```bash
-ldfl-cli -d -c config.json -- your-application [args...]
+For embedding LDFL in your project, copy over `lib/ldfl.c` in your project.
+
+Create a header file (e.g., `ldfl-config.h`) with your configuration:
+
+```c
+static const unsigned char ldf_default_blob[] = "hello from ldfl";
+
+ldfl_mapping_t ldfl_mapping[] = {
+    /* name                   search_pattern          operation         target                path_transform, extra_options         */
+    { "temp files redirect",  ".*/temp/([^/]*)$",     LDFL_OP_MAP,      "/tmp/$1",            LDFL_PATH_ABS,  NULL                   },
+    { "inc redirect",         "(.*)/inc/(.*)",        LDFL_OP_MAP,      "$1/lib/$2",          LDFL_PATH_ABS,  NULL                   },
+    { "executable redirect",  ".*/.bin/\\([^/]*\\)$", LDFL_OP_EXEC_MAP, "/opt/ldfl/bin/\\1",  LDFL_PATH_ABS,  NULL                   },
+    { "memory open",          ".*/file[0-9].txt",     LDFL_OP_MEM_OPEN, NULL,                 LDFL_PATH_ABS,  NULL                   },
+    { "static file",          ".*/static.bin",        LDFL_OP_STATIC,   ldf_default_blob,     LDFL_PATH_ABS,  NULL                   },
+    { "change data perm",     ".*/data/.*",           LDFL_OP_PERM,     NULL,                 LDFL_PATH_ABS,  "kakwa:kakwa|0700|0600"},
+    { "allow /dev",           "^/dev/.*",             LDFL_OP_NOOP,     NULL,                 LDFL_PATH_ABS,  NULL                   },
+    { "default & deny",       ".*",                   LDFL_OP_DENY,     NULL,                 LDFL_PATH_ABS,  NULL                   },
+    { NULL,                   NULL,                   LDFL_OP_END,      NULL,                 LDFL_PATH_ABS,  NULL                   }  // keep this last value
+};
+
+ldfl_setting_t ldfl_setting = {
+    .log_mask    = LDFL_LOG_MAPPING_RULE_FOUND | LDFL_LOG_FN_CALL | LDFL_LOG_INIT | LDFL_LOG_MAPPING_RULE_APPLY | LDFL_LOG_FN_CALL_ERR,
+    .log_level   = LOG_WARNING,
+    .logger      = ldfl_syslog_logger,
+};
 ```
 
-### Custom Library Path
-
-If you need to specify a custom library path:
-```bash
-ldfl-cli -l /path/to/libldfl.so -c config.json -- your-application [args...]
+In your code, add:
+```c
+#define LDFL_CONFIG "ldfl-config.h"
+#include "ldfl.c"
 ```
 
+Link against libpcre2 (`-lpcre2-8`) if necessary.
 
+And finally, build your project.

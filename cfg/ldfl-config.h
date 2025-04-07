@@ -4,7 +4,7 @@ ldfl_mapping_t ldfl_mapping[] = {
     /* name                   search_pattern          operation         target                path_transform, extra_options         */
     { "temp files redirect",  ".*/temp/([^/]*)$",     LDFL_OP_MAP,      "/tmp/$1",            LDFL_PATH_ABS,  NULL                   },
     { "inc redirect",         "(.*)/inc/(.*)",        LDFL_OP_MAP,      "$1/lib/$2",          LDFL_PATH_ABS,  NULL                   },
-    { "executable redirect",  ".*/.bin/\\([^/]*\\)$", LDFL_OP_EXEC_MAP, "/opt/ldfl/bin/\\1", LDFL_PATH_ABS,  NULL                   },
+    { "executable redirect",  ".*/.bin/\\([^/]*\\)$", LDFL_OP_EXEC_MAP, "/opt/ldfl/bin/\\1",  LDFL_PATH_ABS,  NULL                   },
     { "memory open",          ".*/file[0-9].txt",     LDFL_OP_MEM_OPEN, NULL,                 LDFL_PATH_ABS,  NULL                   },
     { "static file",          ".*/static.bin",        LDFL_OP_STATIC,   ldf_default_blob,     LDFL_PATH_ABS,  NULL                   },
     { "change data perm",     ".*/data/.*",           LDFL_OP_PERM,     NULL,                 LDFL_PATH_ABS,  "kakwa:kakwa|0700|0600"},

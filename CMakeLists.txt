@@ -75,12 +75,13 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 link_directories(${CMAKE_BINARY_DIR}/ /usr/local/lib /usr/lib/)
 
 # headers directories
-include_directories(./inc/ ${ZLIB_INCLUDE_DIRS} ${PCRE2_INCLUDE_DIRS}
-                    ${JANSSON_INCLUDE_DIRS} /usr/include/ /sw/include/)
+include_directories(./inc/ ${PCRE2_INCLUDE_DIRS} ${JANSSON_INCLUDE_DIRS}
+                    /usr/include/ /sw/include/)
 
 file(GLOB ldfl_SOURCES lib/*.c)
 add_library(ldfl ${SHARED} ${ldfl_SOURCES})
-target_link_libraries(ldfl ${PCRE2_LIBRARY} ${CUNIT_LIBRARY} ${JANSSON_LIBRARY})
+target_link_libraries(ldfl ${PCRE2_LIBRARY}3 ${CUNIT_LIBRARY}
+                      ${JANSSON_LIBRARY})
 set_target_properties(ldfl PROPERTIES VERSION ${ldfl_VERSION}
                                       SOVERSION ${ldfl_VERSION_MAJOR})
 
