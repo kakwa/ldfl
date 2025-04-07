@@ -88,10 +88,98 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 
 static struct argp argp = {options, parse_opt, args_doc, doc};
 
+// Function to validate arguments
+int validate_arguments(struct arguments *args) {
+    if (!args->config_file) {
+        fprintf(stderr, "Error: Configuration file is required (-c)\n");
+        return 1;
+    }
+
+    if (!args->command_args || args->command_argc < 1) {
+        fprintf(stderr, "Error: Command is required after --\n");
+        return 1;
+    }
+
+    return 0;
+}
+
+// Function to setup environment variables
+int setup_environment(struct arguments *args, char **abs_config_path, char **abs_library_path) {
+    // Get absolute path for config file
+    *abs_config_path = realpath(args->config_file, NULL);
+    if (!*abs_config_path) {
+        fprintf(stderr, "Error: Cannot resolve config file path '%s': %s\n", args->config_file, strerror(errno));
+        return 1;
+    }
+
+    if (args->debug) {
+        fprintf(stderr, "Debug: Config file absolute path: %s\n", *abs_config_path);
+    }
+
+    // Check if library exists in current directory
+    if (args->library_path == NULL) {
+        if (access("./libldfl.so", F_OK) == 0) {
+            args->library_path = "./libldfl.so";
+            if (args->debug) {
+                fprintf(stderr, "Debug: Found LDFL library in current directory: %s, using it\n", args->library_path);
+            }
+        } else {
+            args->library_path = DEFAULT_LIB_PATH;
+            if (args->debug) {
+                fprintf(stderr, "Debug: Using default LDFL library path '%s'\n", args->library_path);
+            }
+        }
+    }
+
+    // Get absolute path for library
+    *abs_library_path = realpath(args->library_path, NULL);
+    if (!*abs_library_path) {
+        fprintf(stderr, "Error: Cannot resolve library path '%s': %s\n", args->library_path, strerror(errno));
+        free(*abs_config_path);
+        return 1;
+    }
+
+    if (args->debug) {
+        fprintf(stderr, "Debug: Library absolute path: %s\n", *abs_library_path);
+    }
+
+    // Set LDFL_CONFIG
+    if (setenv("LDFL_CONFIG", *abs_config_path, 1) != 0) {
+        fprintf(stderr, "Error setting LDFL_CONFIG: %s\n", strerror(errno));
+        free(*abs_config_path);
+        free(*abs_library_path);
+        return 1;
+    }
+
+    if (args->debug) {
+        fprintf(stderr, "Debug: Set LDFL_CONFIG=%s\n", *abs_config_path);
+    }
+
+    // Set LD_PRELOAD to point to our library
+    if (setenv("LD_PRELOAD", *abs_library_path, 1) != 0) {
+        fprintf(stderr, "Error setting LD_PRELOAD: %s\n", strerror(errno));
+        free(*abs_config_path);
+        free(*abs_library_path);
+        return 1;
+    }
+
+    if (args->debug) {
+        fprintf(stderr, "Debug: Set LD_PRELOAD=%s\n", *abs_library_path);
+        fprintf(stderr, "Debug: Executing command: ");
+        for (int i = 0; i < args->command_argc; i++) {
+            fprintf(stderr, "%s ", args->command_args[i]);
+        }
+        fprintf(stderr, "\n");
+    }
+
+    return 0;
+}
+
+#ifndef LDLF_TESTING
 int main(int argc, char **argv) {
-    struct arguments args             = {0};
-    char            *abs_config_path  = NULL;
-    char            *abs_library_path = NULL;
+    struct arguments args = {0};
+    char *abs_config_path = NULL;
+    char *abs_library_path = NULL;
 
     // Set default library path
     args.library_path = NULL;
@@ -105,81 +193,13 @@ int main(int argc, char **argv) {
     }
 
     // Validate arguments
-    if (!args.config_file) {
-        fprintf(stderr, "Error: Configuration file is required (-c)\n");
+    if (validate_arguments(&args) != 0) {
         return 1;
     }
 
-    if (!args.command_args || args.command_argc < 1) {
-        fprintf(stderr, "Error: Command is required after --\n");
+    // Setup environment
+    if (setup_environment(&args, &abs_config_path, &abs_library_path) != 0) {
         return 1;
-    }
-
-    // Get absolute path for config file
-    abs_config_path = realpath(args.config_file, NULL);
-    if (!abs_config_path) {
-        fprintf(stderr, "Error: Cannot resolve config file path '%s': %s\n", args.config_file, strerror(errno));
-        return 1;
-    }
-
-    if (args.debug) {
-        fprintf(stderr, "Debug: Config file absolute path: %s\n", abs_config_path);
-    }
-
-    // Check if library exists in current directory
-    if (args.library_path == NULL) {
-        if (access("./libldfl.so", F_OK) == 0) {
-            args.library_path = "./libldfl.so";
-            if (args.debug) {
-                fprintf(stderr, "Debug: Found LDFL library in current directory: %s, using it\n", args.library_path);
-            }
-        } else {
-            args.library_path = DEFAULT_LIB_PATH;
-            if (args.debug) {
-                fprintf(stderr, "Debug: Using default LDFL library path '%s'\n", args.library_path);
-            }
-        }
-    }
-
-    // Get absolute path for library
-    abs_library_path = realpath(args.library_path, NULL);
-    if (!abs_library_path) {
-        fprintf(stderr, "Error: Cannot resolve library path '%s': %s\n", args.library_path, strerror(errno));
-        free(abs_config_path);
-        return 1;
-    }
-
-    if (args.debug) {
-        fprintf(stderr, "Debug: Library absolute path: %s\n", abs_library_path);
-    }
-
-    // Set LDFL_CONFIG
-    if (setenv("LDFL_CONFIG", abs_config_path, 1) != 0) {
-        fprintf(stderr, "Error setting LDFL_CONFIG: %s\n", strerror(errno));
-        free(abs_config_path);
-        free(abs_library_path);
-        return 1;
-    }
-
-    if (args.debug) {
-        fprintf(stderr, "Debug: Set LDFL_CONFIG=%s\n", abs_config_path);
-    }
-
-    // Set LD_PRELOAD to point to our library
-    if (setenv("LD_PRELOAD", abs_library_path, 1) != 0) {
-        fprintf(stderr, "Error setting LD_PRELOAD: %s\n", strerror(errno));
-        free(abs_config_path);
-        free(abs_library_path);
-        return 1;
-    }
-
-    if (args.debug) {
-        fprintf(stderr, "Debug: Set LD_PRELOAD=%s\n", abs_library_path);
-        fprintf(stderr, "Debug: Executing command: ");
-        for (int i = 0; i < args.command_argc; i++) {
-            fprintf(stderr, "%s ", args.command_args[i]);
-        }
-        fprintf(stderr, "\n");
     }
 
     // Free allocated memory
@@ -193,3 +213,4 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Error executing command: %s\n", strerror(errno));
     return 1;
 }
+#endif
