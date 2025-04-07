@@ -787,6 +787,7 @@ static void __attribute__((constructor(101))) ldfl_init() {
 #endif
 
 #ifndef LDFL_CONFIG
+    ldfl_regex_free();
     const char *config_path = getenv("LDFL_CONFIG");
     if (config_path == NULL)
         ldfl_setting.logger(LDFL_LOG_INIT, LOG_WARNING, "LDFL_CONFIG environment variable is not set");
