@@ -91,40 +91,36 @@ target_link_libraries(fliar-cli fliar ${PCRE2_LIBRARY} ${JANSSON_LIBRARY})
 
 if(BUILD_TESTS)
   if(CUNIT_LIBRARY)
-
     include(CTest)
     include_directories(./lib ./utils ./tests)
-    add_test(NAME fliar-test-utils COMMAND fliar-test-utils)
-    add_executable(fliar-test-utils tests/tests-utils.c)
-    target_link_libraries(fliar-test-utils ${PCRE2_LIBRARY} ${CUNIT_LIBRARY}
-                          ${JANSSON_LIBRARY})
 
-    add_test(NAME fliar-test-mapping COMMAND fliar-test-mapping)
-    add_executable(fliar-test-mapping tests/tests-mapping.c)
-    target_link_libraries(fliar-test-mapping ${PCRE2_LIBRARY} ${CUNIT_LIBRARY}
-                          ${JANSSON_LIBRARY})
+    # Find all test source files
+    file(GLOB TEST_SOURCES "tests/tests-*.c")
 
-    add_test(NAME fliar-test-multimapping COMMAND fliar-test-multimapping)
-    add_executable(fliar-test-multimapping tests/tests-multimapping.c)
-    target_link_libraries(fliar-test-multimapping ${PCRE2_LIBRARY}
-                          ${CUNIT_LIBRARY} ${JANSSON_LIBRARY})
+    # Macro to create test executables
+    macro(create_test test_source)
+      get_filename_component(test_name ${test_source} NAME_WE)
+      string(REPLACE "tests-" "" test_name ${test_name})
 
-    add_test(NAME fliar-test-config COMMAND fliar-test-config)
-    add_executable(fliar-test-config tests/tests-config.c)
-    target_link_libraries(fliar-test-config fliar ${PCRE2_LIBRARY}
-                          ${CUNIT_LIBRARY} ${JANSSON_LIBRARY})
+      add_test(NAME fliar-test-${test_name} COMMAND fliar-test-${test_name})
+      add_executable(fliar-test-${test_name} ${test_source})
+      target_link_libraries(fliar-test-${test_name} ${PCRE2_LIBRARY}
+                            ${CUNIT_LIBRARY} ${JANSSON_LIBRARY})
+      list(APPEND TEST_TARGETS fliar-test-${test_name})
+    endmacro()
+
+    # Create all test executables
+    foreach(test_source ${TEST_SOURCES})
+      create_test(${test_source})
+    endforeach()
 
     # Add the test target
     add_custom_target(
       tests
-      COMMAND fliar-test-utils
-      COMMAND fliar-test-mapping
-      COMMAND fliar-test-multimapping
-      COMMAND fliar-test-config
+      COMMAND ${TEST_TARGETS}
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       COMMENT "Running tests")
-    add_dependencies(tests fliar-test-utils fliar-test-mapping
-                     fliar-test-multimapping fliar-test-config)
+    add_dependencies(tests ${TEST_TARGETS})
 
     if(COVERAGE)
       set(CMAKE_BUILD_TYPE Debug)
@@ -138,13 +134,9 @@ if(BUILD_TESTS)
         -j
         ${n_cores}
         DEPENDENCIES
-        fliar-test-utils
-        fliar-test-mapping
-        fliar-test-multimapping
-        fliar-test-config)
+        ${TEST_TARGETS})
 
-      add_dependencies(coverage fliar-test-utils fliar-test-mapping
-                       fliar-test-multimapping fliar-test-config)
+      add_dependencies(coverage ${TEST_TARGETS})
     endif(COVERAGE)
 
   else(CUNIT_LIBRARY)
