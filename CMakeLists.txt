@@ -85,9 +85,7 @@ set_target_properties(ldfl PROPERTIES VERSION ${ldfl_VERSION}
 
 # Compile the executable
 add_executable(ldfl-cli ldfl-wrapper.c)
-target_link_libraries(ldfl-cli ldfl ${PCRE2_LIBRARY} ${JANSSON_LIBRARY})
-
-target_link_libraries(ldfl-cli ldfl ${PCRE2_LIBRARY} ${JANSSON_LIBRARY})
+target_link_libraries(ldfl-cli)
 
 if(BUILD_TESTS)
   if(CUNIT_LIBRARY)
