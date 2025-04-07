@@ -177,9 +177,9 @@ int setup_environment(struct arguments *args, char **abs_config_path, char **abs
 
 #ifndef LDLF_TESTING
 int main(int argc, char **argv) {
-    struct arguments args = {0};
-    char *abs_config_path = NULL;
-    char *abs_library_path = NULL;
+    struct arguments args             = {0};
+    char            *abs_config_path  = NULL;
+    char            *abs_library_path = NULL;
 
     // Set default library path
     args.library_path = NULL;
