@@ -175,7 +175,11 @@ int main(int argc, char **argv) {
 
     if (args.debug) {
         fprintf(stderr, "Debug: Set LD_PRELOAD=%s\n", abs_library_path);
-        fprintf(stderr, "Debug: Executing command...\n");
+        fprintf(stderr, "Debug: Executing command: ");
+        for (int i = 0; i < args.command_argc; i++) {
+            fprintf(stderr, "%s ", args.command_args[i]);
+        }
+        fprintf(stderr, "\n");
     }
 
     // Free allocated memory
