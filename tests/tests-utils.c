@@ -10,7 +10,7 @@
 
 void vsyslog(int priority, const char *fmt, va_list args);
 
-#include "fliar.c" // Include the header containing the generate_header function declaration.
+#include "ldfl.c" // Include the header containing the generate_header function declaration.
 #include "embedder.c"
 
 void test_generate_header() {

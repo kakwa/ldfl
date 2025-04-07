@@ -32,7 +32,7 @@
       "name": "executable redirect",
       "search_pattern": ".*/.bin/\\([^/]*\\)$",
       "operation": "exec_map",
-      "target": "/opt/fliar/bin/\\1",
+      "target": "/opt/ldfl/bin/\\1",
       "path_transform": "absolute",
       "extra_options": null
     },

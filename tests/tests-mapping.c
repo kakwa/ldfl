@@ -13,7 +13,7 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 
-#include "fliar.c" // Include the header containing the generate_header function declaration.
+#include "ldfl.c" // Include the header containing the generate_header function declaration.
 
 void test_open_and_unlink(void) {
     const char *test_file = "test_file.txt";

@@ -29,7 +29,7 @@
 #define CHUNK 16384
 
 #ifndef DEFAULT_LIB_PATH
-#define DEFAULT_LIB_PATH "libfliar.so"
+#define DEFAULT_LIB_PATH "libldfl.so"
 #endif
 
 const char *argp_program_version = BFD_VERSION;
@@ -40,7 +40,7 @@ static char doc[] = "\nFliar Utility - LD_PRELOAD wrapper for path remapping";
 
 static struct argp_option options[] = {
     {"config", 'c', "CONFIG_FILE", 0, "Configuration file for path remapping"},
-    {"library", 'l', "LIBRARY_PATH", 0, "Path to the fliar library (default: " DEFAULT_LIB_PATH ")"},
+    {"library", 'l', "LIBRARY_PATH", 0, "Path to the ldfl library (default: " DEFAULT_LIB_PATH ")"},
     {"debug", 'd', NULL, 0, "Debug Output"},
     {0}};
 
@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
     argp_parse(&argp, argc, argv, 0, 0, &args);
 
     if (args.debug) {
-        fprintf(stderr, "Debug: Starting fliar-wrapper\n");
+        fprintf(stderr, "Debug: Starting ldfl-wrapper\n");
         fprintf(stderr, "Debug: Config file: %s\n", args.config_file);
     }
 
@@ -128,8 +128,8 @@ int main(int argc, char **argv) {
 
     // Check if library exists in current directory
     if (args.library_path == NULL) {
-        if (access("./libfliar.so", F_OK) == 0) {
-            args.library_path = "./libfliar.so";
+        if (access("./libldfl.so", F_OK) == 0) {
+            args.library_path = "./libldfl.so";
             if (args.debug) {
                 fprintf(stderr, "Debug: Found LDFL library in current directory: %s, using it\n", args.library_path);
             }

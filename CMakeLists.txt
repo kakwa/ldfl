@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(fliar)
+project(ldfl)
 
 # Project version (sematic versionning)
-set(fliar_VERSION_MAJOR 0)
-set(fliar_VERSION_MINOR 1)
-set(fliar_VERSION_PATCH 0)
+set(ldfl_VERSION_MAJOR 0)
+set(ldfl_VERSION_MINOR 1)
+set(ldfl_VERSION_PATCH 0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
@@ -13,17 +13,17 @@ find_package(PCRE2 REQUIRED)
 find_package(Jansson REQUIRED)
 find_library(CUNIT_LIBRARY cunit)
 
-set(fliar_VERSION
-    ${fliar_VERSION_MAJOR}.${fliar_VERSION_MINOR}.${fliar_VERSION_PATCH})
+set(ldfl_VERSION
+    ${ldfl_VERSION_MAJOR}.${ldfl_VERSION_MINOR}.${ldfl_VERSION_PATCH})
 
 add_custom_target(
   tag
-  COMMAND git tag -a ${fliar_VERSION} -m "tagging version ${fliar_VERSION}"
-  COMMAND git push origin ${fliar_VERSION})
+  COMMAND git tag -a ${ldfl_VERSION} -m "tagging version ${ldfl_VERSION}"
+  COMMAND git push origin ${ldfl_VERSION})
 
 # set version as a definition
-set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -DBFD_VERSION='\"${fliar_VERSION}\"'")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBFD_VERSION='\"${fliar_VERSION}\"'")
+set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -DBFD_VERSION='\"${ldfl_VERSION}\"'")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBFD_VERSION='\"${ldfl_VERSION}\"'")
 
 # Options
 option(DEBUG "compile with debug symbol" OFF)
@@ -78,16 +78,16 @@ link_directories(${CMAKE_BINARY_DIR}/ /usr/local/lib /usr/lib/)
 include_directories(./inc/ ${ZLIB_INCLUDE_DIRS} ${PCRE2_INCLUDE_DIRS}
                     ${JANSSON_INCLUDE_DIRS} /usr/include/ /sw/include/)
 
-file(GLOB fliar_SOURCES lib/*.c)
-add_library(fliar ${SHARED} ${fliar_SOURCES})
-set_target_properties(fliar PROPERTIES VERSION ${fliar_VERSION}
-                                       SOVERSION ${fliar_VERSION_MAJOR})
+file(GLOB ldfl_SOURCES lib/*.c)
+add_library(ldfl ${SHARED} ${ldfl_SOURCES})
+set_target_properties(ldfl PROPERTIES VERSION ${ldfl_VERSION}
+                                       SOVERSION ${ldfl_VERSION_MAJOR})
 
 # Compile the executable
-add_executable(fliar-cli fliar-wrapper.c)
-target_link_libraries(fliar-cli fliar ${PCRE2_LIBRARY} ${JANSSON_LIBRARY})
+add_executable(ldfl-cli ldfl-wrapper.c)
+target_link_libraries(ldfl-cli ldfl ${PCRE2_LIBRARY} ${JANSSON_LIBRARY})
 
-target_link_libraries(fliar-cli fliar ${PCRE2_LIBRARY} ${JANSSON_LIBRARY})
+target_link_libraries(ldfl-cli ldfl ${PCRE2_LIBRARY} ${JANSSON_LIBRARY})
 
 if(BUILD_TESTS)
   if(CUNIT_LIBRARY)
@@ -102,11 +102,11 @@ if(BUILD_TESTS)
       get_filename_component(test_name ${test_source} NAME_WE)
       string(REPLACE "tests-" "" test_name ${test_name})
 
-      add_test(NAME fliar-test-${test_name} COMMAND fliar-test-${test_name})
-      add_executable(fliar-test-${test_name} ${test_source})
-      target_link_libraries(fliar-test-${test_name} ${PCRE2_LIBRARY}
+      add_test(NAME ldfl-test-${test_name} COMMAND ldfl-test-${test_name})
+      add_executable(ldfl-test-${test_name} ${test_source})
+      target_link_libraries(ldfl-test-${test_name} ${PCRE2_LIBRARY}
                             ${CUNIT_LIBRARY} ${JANSSON_LIBRARY})
-      list(APPEND TEST_TARGETS fliar-test-${test_name})
+      list(APPEND TEST_TARGETS ldfl-test-${test_name})
     endmacro()
 
     # Create all test executables
@@ -161,13 +161,13 @@ endif()
 
 # install binaries and library
 install(
-  TARGETS fliar fliar-cli
+  TARGETS ldfl ldfl-cli
   RUNTIME DESTINATION ${BIN_INSTALL_DIR}
   LIBRARY DESTINATION ${LIB_INSTALL_DIR}
   ARCHIVE DESTINATION ${LIB_INSTALL_DIR})
 
-# Set the default library path for fliar.c
-set(DEFAULT_LIB_PATH "${CMAKE_INSTALL_PREFIX}/${LIB_INSTALL_DIR}/libfliar.so")
+# Set the default library path for ldfl.c
+set(DEFAULT_LIB_PATH "${CMAKE_INSTALL_PREFIX}/${LIB_INSTALL_DIR}/libldfl.so")
 add_definitions(-DDEFAULT_LIB_PATH="${DEFAULT_LIB_PATH}")
 
 # check if Doxygen is installed
@@ -197,4 +197,4 @@ if(BUILD_DOC)
 endif(BUILD_DOC)
 
 # install header file
-install(FILES inc/fliar.h DESTINATION ${INCLUDE_INSTALL_DIR})
+install(FILES inc/ldfl.h DESTINATION ${INCLUDE_INSTALL_DIR})

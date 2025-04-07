@@ -10,7 +10,7 @@
 #include <syslog.h>
 #include <jansson.h>
 
-#include "../lib/fliar.c"
+#include "../lib/ldfl.c"
 
 // Test fixture setup and teardown
 static int setup(void) {

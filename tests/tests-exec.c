@@ -13,7 +13,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include "fliar.c"
+#include "ldfl.c"
 
 #define TEST_OUTPUT_FILE "tests/exec_test_output.txt"
 
