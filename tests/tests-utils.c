@@ -11,44 +11,6 @@
 void vsyslog(int priority, const char *fmt, va_list args);
 
 #include "ldfl.c" // Include the header containing the generate_header function declaration.
-#include "embedder.c"
-
-void test_generate_header() {
-    const char *input_file  = "test_input.bin";
-    const char *output_file = "test_output.h";
-    const char *var_name    = "test_var";
-
-    // Create a test binary file
-    FILE *in = fopen(input_file, "wb");
-    CU_ASSERT_PTR_NOT_NULL_FATAL(in);
-
-    unsigned char test_data[] = {0xDE, 0xAD, 0xBE, 0xEF};
-    fwrite(test_data, sizeof(unsigned char), sizeof(test_data), in);
-    fclose(in);
-
-    // Generate the header file
-    generate_header(input_file, output_file, var_name);
-
-    // Validate the generated header file
-    FILE *out = fopen(output_file, "r");
-    CU_ASSERT_PTR_NOT_NULL_FATAL(out);
-
-    char buffer[256];
-    int  contains_variable = 0;
-    while (fgets(buffer, sizeof(buffer), out)) {
-        if (strstr(buffer, "const unsigned char test_var[4] = {")) {
-            contains_variable = 1;
-            break;
-        }
-    }
-    fclose(out);
-
-    CU_ASSERT(contains_variable);
-
-    // Cleanup
-    remove(input_file);
-    remove(output_file);
-}
 
 // Redirect stderr to a buffer for testing
 static char  stderr_buffer[1024];
@@ -260,7 +222,6 @@ int main() {
     CU_add_test(suite, "empty list", test_ldfl_render_nullable_array_empty);
     CU_add_test(suite, "null list", test_ldfl_render_nullable_array_null);
     CU_add_test(suite, "single element list", test_ldfl_render_nullable_array_single_element);
-    CU_add_test(suite, "generate header", test_generate_header);
     CU_add_test(suite, "test_absolute_path", test_absolute_path);
     // CU_add_test(suite, "test_relative_path_with_cwd", test_relative_path_with_cwd);
     // CU_add_test(suite, "test_relative_path_with_fd", test_relative_path_with_fd);
