@@ -261,14 +261,14 @@ int main() {
     CU_add_test(suite, "null list", test_ldfl_render_nullable_array_null);
     CU_add_test(suite, "single element list", test_ldfl_render_nullable_array_single_element);
     CU_add_test(suite, "generate header", test_generate_header);
-    // CU_add_test(suite, "test_absolute_path", test_absolute_path);
-    // CU_add_test(suite, "test_relative_path_with_cwd", test_relative_path_with_cwd);
-    // CU_add_test(suite, "test_relative_path_with_fd", test_relative_path_with_fd);
-    // CU_add_test(suite, "test_null_pathname", test_null_pathname);
-    // CU_add_test(suite, "test_empty_pathname", test_empty_pathname);
-    // CU_add_test(suite, "test_nonexistent_path", test_nonexistent_path);
-    // CU_add_test(suite, "test_invalid_fd", test_invalid_fd);
-    // CU_add_test(suite, "test_long_pathname", test_long_pathname);
+    CU_add_test(suite, "test_absolute_path", test_absolute_path);
+    //CU_add_test(suite, "test_relative_path_with_cwd", test_relative_path_with_cwd);
+    //CU_add_test(suite, "test_relative_path_with_fd", test_relative_path_with_fd);
+    CU_add_test(suite, "test_null_pathname", test_null_pathname);
+    //CU_add_test(suite, "test_empty_pathname", test_empty_pathname);
+    //CU_add_test(suite, "test_nonexistent_path", test_nonexistent_path);
+    //CU_add_test(suite, "test_invalid_fd", test_invalid_fd);
+    CU_add_test(suite, "test_long_pathname", test_long_pathname);
 
     suite = CU_add_suite("Logger", setup_stderr_redirect, teardown_stderr_redirect);
     CU_add_test(suite, "logger stderr", test_ldfl_stderr_logger);

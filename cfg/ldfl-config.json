@@ -5,6 +5,7 @@
       "fn_call",
       "init",
       "mapping_rule_apply",
+      "mapping_rule_search",
       "fn_call_err"
     ],
     "log_level": "warning",
