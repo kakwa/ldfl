@@ -34,7 +34,7 @@
 
 /**
  * @file
- * @brief Structures of interest in fliar.c
+ * @brief Structures of interest in ldfl.c
  */
 
 /**
@@ -54,7 +54,7 @@ typedef enum {
  * @brief Bitmask flags for specifying logging categories.
  *
  * This enumeration defines flags used to control the logging behavior
- * of the ld-fliar. Each flag represents a specific category of operations
+ * of the ldfl. Each flag represents a specific category of operations
  * to be logged, and they can be combined using bitwise OR operations.
  */
 typedef enum {
@@ -118,7 +118,7 @@ typedef struct {
 /**
  * @brief Variadic logger function type.
  *
- * This function type is used for logging messages in fliar.
+ * This function type is used for logging messages in ldfl.
  * Implement this signature if you want your own logger
  *
  * @param mask Logging category bitmask (see ldfl_log_category_t).
@@ -640,7 +640,7 @@ void ldfl_apply_rules(compiled_mapping_t **mapping_rules, int num_rules, pcre2_m
 
 #define RINIT                                                                                                          \
     if (!ldfl_initialized && !ldfl_in_init) {                                                                          \
-        ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ld-fliar init did not run, re-init");                           \
+        ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ldld init did not run, re-init");                               \
         ldfl_init();                                                                                                   \
     };
 
@@ -793,12 +793,12 @@ static void __attribute__((constructor(101))) ldfl_init() {
         ldfl_setting.logger(LDFL_LOG_INIT, LOG_WARNING, "LDFL_CONFIG environment variable is not set");
     if (config_path != NULL && ldfl_parse_json_config(config_path))
         ldfl_setting.logger(LDFL_LOG_INIT, LOG_WARNING, "Failed to load JSON config '%s'", config_path);
-    ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ld-fliar init called");
+    ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ldfl init called");
     ldfl_regex_init();
     if (ldfl_mapping != default_default)
         ldfl_initialized = true;
 #else
-    ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ld-fliar init called");
+    ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ldfl init called");
     ldfl_regex_init();
     ldfl_initialized = true;
 #endif
@@ -830,7 +830,7 @@ char *apply_rules_and_cleanup(char *func_name, const char *pathname, uint64_t op
 // de-init function
 // free compiled regexp
 static void __attribute__((destructor(101))) ldfl_dinit() {
-    ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ld-fliar dinit called");
+    ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ldfl dinit called");
     ldfl_regex_free();
 #ifndef LDFL_CONFIG
     ldfl_free_json_config();

@@ -1,4 +1,4 @@
-static const unsigned char ldf_default_blob[] = "hello from ld-fliar";
+static const unsigned char ldf_default_blob[] = "hello from ldfl";
 
 ldfl_mapping_t ldfl_mapping[] = {
     /* name                   search_pattern          operation         target                path_transform, extra_options         */

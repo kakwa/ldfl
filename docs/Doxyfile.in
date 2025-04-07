@@ -4,9 +4,9 @@
 # Project related configuration options
 #---------------------------------------------------------------------------
 DOXYFILE_ENCODING      = UTF-8
-PROJECT_NAME           = "LD-FLIAR"
+PROJECT_NAME           = "LDFL"
 PROJECT_NUMBER         =
-PROJECT_BRIEF          = "LD_PRELOAD library remapping files to other location or in memory embedding."
+PROJECT_BRIEF          = "LD_PRELOAD library remapping files & directories."
 PROJECT_LOGO           =
 OUTPUT_DIRECTORY       = ./docs
 CREATE_SUBDIRS         = NO

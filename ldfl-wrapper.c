@@ -34,9 +34,9 @@
 
 const char *argp_program_version = BFD_VERSION;
 
-const char *argp_program_bug_address = "https://github.com/kakwa/ld-fliar/issues";
+const char *argp_program_bug_address = "https://github.com/kakwa/ldfl/issues";
 
-static char doc[] = "\nFliar Utility - LD_PRELOAD wrapper for path remapping";
+static char doc[] = "\nLDFL - libldfl.so LD_PRELOAD wrapper for path remapping";
 
 static struct argp_option options[] = {
     {"config", 'c', "CONFIG_FILE", 0, "Configuration file for path remapping"},
