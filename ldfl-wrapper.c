@@ -71,7 +71,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         break;
     case ARGP_KEY_ARGS:
         arguments->command_argc = state->argc - state->next;
-        arguments->command_args = calloc(arguments->command_argc, sizeof(char *));
+        arguments->command_args = calloc(arguments->command_argc + 1, sizeof(char *));
         if (!arguments->command_args) {
             argp_failure(state, 1, ENOMEM, "Memory allocation failed");
         }
