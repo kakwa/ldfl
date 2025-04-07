@@ -56,7 +56,7 @@ Optional build options:
 
 Example with all options:
 ```bash
-cmake -DBUILD_TESTS=ON -DBUILD_DOC=ON -DCOVERAGE=ON -DDEBUG=ON ..
+cmake -DBUILD_TESTS=ON -DBUILD_DOC=ON -DCOVERAGE=ON -DDEBUG=ON .
 ```
 
 ## Installation
@@ -75,43 +75,160 @@ This will install:
 ### Basic Usage
 
 1. Create a configuration file (e.g., `config.json`) with your mapping rules:
-```json
-{
-    "mappings": [
-        {
-            "name": "example",
-            "search_pattern": "/path/to/original/file",
-            "operation": "map",
-            "target": "/path/to/new/location",
-            "path_transform": "abs"
-        }
-    ]
-}
-```
-
-2. Use the wrapper to run your application:
 ```bash
 ldfl-cli -c config.json -- your-application [args...]
 ```
 
 ## Configuration Options
 
-Each mapping can have the following properties:
-- `name`: Descriptive name for the mapping
-- `search_pattern`: Regular expression pattern to match files
-- `operation`: Type of operation to perform
-- `target`: Target path or resource
-- `path_transform`: Use "orig" for original path or "abs" for absolute path
-- `extra_options`: Additional options specific to the operation
+The configuration file is a JSON file with two main sections: `settings` and `mappings`.
 
-The configuration file supports several operations:
-- `map`: Map a file to a different location
-- `exec_map`: Map an executable to a different location
-- `mem_open`: Open a file from memory
-- `static`: Static file operation
-- `perm`: Change file permissions/ownership
-- `deny`: Deny access to a file
-- `ro`: Restrict to read-only access
+### Settings
+
+The `settings` section controls the logging behavior:
+
+```json
+{
+  "settings": {
+    "log_mask": [
+      "mapping_rule_found",
+      "fn_call",
+      "init",
+      "mapping_rule_apply",
+      "mapping_rule_search",
+      "fn_call_err"
+    ],
+    "log_level": "warning",
+    "logger": "syslog"
+  }
+}
+```
+
+Available log masks:
+- `mapping_rule_found`: Log when a mapping rule is found
+- `fn_call`: Log LibC function calls
+- `init`: Log initialization operations
+- `mapping_rule_apply`: Log when a mapping rule is applied
+- `mapping_rule_search`: Log mapping search operations
+- `fn_call_err`: Log LibC function call errors
+
+Log levels:
+- `debug`
+- `info`
+- `warning`
+- `error`
+
+Loggers:
+- `syslog`: System logger
+- `stderr`: Standard error output
+- `dummy`: No logging
+
+### Mappings
+
+The `mappings` section defines the file path remapping rules. Each mapping has the following properties:
+
+```json
+{
+  "mappings": [
+    {
+      "name": "descriptive name",
+      "search_pattern": "regex pattern",
+      "operation": "operation type",
+      "target": "target path or resource",
+      "path_transform": "absolute|original",
+      "extra_options": "operation specific options"
+    }
+  ]
+}
+```
+
+#### Available Operations
+
+1. **File Redirection** (`map`):
+```json
+{
+  "name": "temp files redirect",
+  "search_pattern": ".*/temp/([^/]*)$",
+  "operation": "map",
+  "target": "/tmp/$1",
+  "path_transform": "absolute"
+}
+```
+
+2. **Executable Redirection** (`exec_map`):
+```json
+{
+  "name": "executable redirect",
+  "search_pattern": ".*/.bin/\\([^/]*\\)$",
+  "operation": "exec_map",
+  "target": "/opt/ldfl/bin/\\1",
+  "path_transform": "absolute"
+}
+```
+
+3. **Memory File** (`mem_open`):
+```json
+{
+  "name": "memory open",
+  "search_pattern": ".*/file[0-9].txt",
+  "operation": "mem_open",
+  "target": null,
+  "path_transform": "absolute"
+}
+```
+
+4. **Static File** (`static`):
+```json
+{
+  "name": "static file",
+  "search_pattern": ".*/static.bin",
+  "operation": "static",
+  "target": "default_blob",
+  "path_transform": "absolute"
+}
+```
+
+5. **Permission Change** (`perm`):
+```json
+{
+  "name": "change data perm",
+  "search_pattern": ".*/data/.*",
+  "operation": "perm",
+  "target": null,
+  "path_transform": "absolute",
+  "extra_options": "user:group|dir_mode|file_mode"
+}
+```
+
+6. **Access Control**:
+   - **Allow** (`noop`):
+```json
+{
+  "name": "allow /dev",
+  "search_pattern": "^/dev/.*",
+  "operation": "noop",
+  "path_transform": "absolute"
+}
+```
+   - **Deny** (`deny`):
+```json
+{
+  "name": "default & deny",
+  "search_pattern": ".*",
+  "operation": "deny",
+  "path_transform": "absolute"
+}
+```
+
+7. **Read-Only** (`ro`):
+```json
+{
+  "name": "read only files",
+  "search_pattern": ".*/readonly/.*",
+  "operation": "ro",
+  "path_transform": "absolute"
+}
+```
 
 ### Debug Mode
 
