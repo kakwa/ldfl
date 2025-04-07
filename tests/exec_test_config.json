@@ -1,0 +1,24 @@
+{
+    "settings": {
+      "log_mask": [
+        "mapping_rule_found",
+        "fn_call",
+        "init",
+        "mapping_rule_apply",
+        "mapping_rule_search",
+        "fn_call_err"
+      ],
+      "log_level": "debug",
+      "logger": "stderr"
+    },
+    "mappings": [
+        {
+            "name": "exec_test_script",
+            "operation": "exec_map",
+            "search_pattern": ".*/dir",
+            "target": "tests/exec_test_script.sh",
+            "path_transform": "absolute",
+            "extra_options": null
+        }
+    ]
+} 
