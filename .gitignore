@@ -63,6 +63,7 @@ Testing/
 coverage/
 coverage.info
 coverage.base
+junit.xml
 CMakeDoxyfile.in
 CMakeDoxygenDefaults.cmake
 Doxyfile

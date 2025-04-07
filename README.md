@@ -71,6 +71,7 @@ Optional build options:
 To run the tests & coverage
 ```bash
 cmake . -DBUILD_TESTS=ON -DCOVERAGE=ON
+make
 make coverage
 
 $BROWSER coverage/index.html

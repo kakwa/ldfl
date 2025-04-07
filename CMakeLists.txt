@@ -91,6 +91,7 @@ target_link_libraries(ldfl-cli)
 
 if(BUILD_TESTS)
   if(CUNIT_LIBRARY)
+    set(CMAKE_CTEST_ARGUMENTS "--output-junit" "junit.xml")
     include(CTest)
     include_directories(./lib ./utils ./tests)
 
@@ -114,14 +115,6 @@ if(BUILD_TESTS)
       create_test(${test_source})
     endforeach()
 
-    # Add the test target
-    add_custom_target(
-      tests
-      COMMAND ${TEST_TARGETS}
-      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-      COMMENT "Running tests")
-    add_dependencies(tests ${TEST_TARGETS})
-
     if(COVERAGE)
       set(CMAKE_BUILD_TYPE Debug)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
@@ -131,6 +124,7 @@ if(BUILD_TESTS)
         coverage
         EXECUTABLE
         ctest
+        --output-junit junit.xml
         -j
         ${n_cores}
         DEPENDENCIES
@@ -138,7 +132,6 @@ if(BUILD_TESTS)
 
       add_dependencies(coverage ${TEST_TARGETS})
     endif(COVERAGE)
-
   else(CUNIT_LIBRARY)
     message(WARNING "CUnit not found; not building tests.")
   endif(CUNIT_LIBRARY)
