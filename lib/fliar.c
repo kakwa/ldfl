@@ -785,18 +785,24 @@ static void __attribute__((constructor(101))) ldfl_init() {
     REAL(renamex_np);
     REAL(renameatx_np);
 #endif
+
 #ifndef LDFL_CONFIG
     const char *config_path = getenv("LDFL_CONFIG");
     if (config_path == NULL)
         ldfl_setting.logger(LDFL_LOG_INIT, LOG_WARNING, "LDFL_CONFIG environment variable is not set");
     if (config_path != NULL && ldfl_parse_json_config(config_path))
         ldfl_setting.logger(LDFL_LOG_INIT, LOG_WARNING, "Failed to load JSON config '%s'", config_path);
-#endif
     ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ld-fliar init called");
     ldfl_regex_init();
-
+    if (ldfl_mapping != default_default)
+        ldfl_initialized = true;
+#else
+    ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ld-fliar init called");
+    ldfl_regex_init();
     ldfl_initialized = true;
-    ldfl_in_init     = false;
+#endif
+
+    ldfl_in_init = false;
     ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "initialized");
 }
 
