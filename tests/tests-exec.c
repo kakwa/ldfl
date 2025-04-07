@@ -1,3 +1,9 @@
+#define _DEFAULT_SOURCE 1
+#define _POSIX_C_SOURCE 200809L
+#define _BSD_SOURCE
+#define _GNU_SOURCE
+#define _XOPEN_SOURCE 700
+
 #include <CUnit/Basic.h>
 #include <CUnit/CUnit.h>
 #include <stdio.h>
@@ -6,39 +12,64 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include "fliar.c"
 
 #define TEST_SCRIPT_PATH "tests/exec_test_script.sh"
 #define TEST_OUTPUT_FILE "tests/exec_test_output.txt"
 
 // Helper function to read output from file
-static char* read_output_file(const char* filename) {
-    FILE* file = fopen(filename, "r");
-    if (!file) return NULL;
-    
+static char *read_output_file(const char *filename) {
+    FILE *file = fopen(filename, "r");
+    if (!file)
+        return NULL;
+
     fseek(file, 0, SEEK_END);
     long size = ftell(file);
     fseek(file, 0, SEEK_SET);
-    
-    char* content = malloc(size + 1);
+
+    char *content = malloc(size + 1);
     fread(content, 1, size, file);
     content[size] = '\0';
-    
+
     fclose(file);
     return content;
 }
 
+typedef enum { EXECVE, EXECL, EXECLP, EXECV, EXECVP } exec_type_t;
+
 // Helper function to run a test command and capture output
-static int run_test_command(const char* command, char** output) {
+static int run_test_command(exec_type_t type, char **output) {
     int fd = open(TEST_OUTPUT_FILE, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (fd == -1) return -1;
-    
+    if (fd == -1)
+        return -1;
+
     pid_t pid = fork();
     if (pid == 0) {
         // Child process
         dup2(fd, STDOUT_FILENO);
         close(fd);
-        execl(command);
+
+        char *argv[] = {"/bin/dir", NULL};
+        char *envp[] = {NULL};
+
+        switch (type) {
+        case EXECVE:
+            execve("/bin/dir", argv, envp);
+            break;
+        case EXECL:
+            execl("/bin/dir", "/bin/dir", NULL);
+            break;
+        case EXECLP:
+            execlp("/bin/dir", "/bin/dir", NULL);
+            break;
+        case EXECV:
+            execv("/bin/dir", argv);
+            break;
+        case EXECVP:
+            execvp("/bin/dir", argv);
+            break;
+        }
         exit(1);
     } else if (pid > 0) {
         // Parent process
@@ -54,103 +85,54 @@ static int run_test_command(const char* command, char** output) {
 }
 
 static void test_execve(void) {
-    char* output = NULL;
-    char* argv[] = {"/bin/dir", NULL};
-    char* envp[] = {NULL};
-    
-    // Set up the rule
-    ldfl_rule_t rule = {
-        .pattern = "/bin/dir",
-        .replacement = TEST_SCRIPT_PATH,
-        .type = LDFL_RULE_TYPE_EXEC
-    };
-    ldfl_add_rule(&rule);
-    
-    CU_ASSERT_EQUAL(run_test_command("/bin/dir", &output), 0);
+    char *output = NULL;
+
+    CU_ASSERT_EQUAL(run_test_command(EXECVE, &output), 0);
     CU_ASSERT_PTR_NOT_NULL(output);
-    if (output) {
-        CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
-        free(output);
-    }
-    
-    ldfl_clear_rules();
+    CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
+    free(output);
 }
 
 static void test_execl(void) {
-    char* output = NULL;
-    
-    // Set up the rule
-    ldfl_rule_t rule = {
-        .pattern = "/bin/dir",
-        .replacement = TEST_SCRIPT_PATH,
-        .type = LDFL_RULE_TYPE_EXEC
-    };
-    ldfl_add_rule(&rule);
-    
-    CU_ASSERT_EQUAL(run_test_command("/bin/dir", &output), 0);
+    char *output = NULL;
+
+    CU_ASSERT_EQUAL(run_test_command(EXECL, &output), 0);
     CU_ASSERT_PTR_NOT_NULL(output);
-    if (output) {
-        CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
-        free(output);
-    }
-    
-    ldfl_clear_rules();
+    CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
+    free(output);
 }
 
 static void test_execlp(void) {
-    char* output = NULL;
-    
-    // Set up the rule
-    ldfl_rule_t rule = {
-        .pattern = "/bin/dir",
-        .replacement = TEST_SCRIPT_PATH,
-        .type = LDFL_RULE_TYPE_EXEC
-    };
-    ldfl_add_rule(&rule);
-    
-    CU_ASSERT_EQUAL(run_test_command("dir", &output), 0);
+    char *output = NULL;
+
+    CU_ASSERT_EQUAL(run_test_command(EXECLP, &output), 0);
     CU_ASSERT_PTR_NOT_NULL(output);
-    if (output) {
-        CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
-        free(output);
-    }
-    
-    ldfl_clear_rules();
+    CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
+    free(output);
 }
 
 static void test_execv(void) {
-    char* output = NULL;
-    char* argv[] = {"/bin/dir", NULL};
-    
-    // Set up the rule
-    ldfl_rule_t rule = {
-        .pattern = "/bin/dir",
-        .replacement = TEST_SCRIPT_PATH,
-        .type = LDFL_RULE_TYPE_EXEC
-    };
-    ldfl_add_rule(&rule);
-    
-    CU_ASSERT_EQUAL(run_test_command("/bin/dir", &output), 0);
+    char *output = NULL;
+
+    CU_ASSERT_EQUAL(run_test_command(EXECV, &output), 0);
     CU_ASSERT_PTR_NOT_NULL(output);
-    if (output) {
-        CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
-        free(output);
-    }
-    
-    ldfl_clear_rules();
+    CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
+    free(output);
 }
 
 static void test_execvp(void) {
-    char* output = NULL;
-    char* argv[] = {"dir", NULL};
-    
-   CU_ASSERT_EQUAL(run_test_command("dir", &output), 0);
+    char *output = NULL;
+
+    CU_ASSERT_EQUAL(run_test_command(EXECVP, &output), 0);
     CU_ASSERT_PTR_NOT_NULL(output);
-    if (output) {
-        CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
-        free(output);
-    }
-    
+    CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
+    free(output);
+}
+
+int init_exec_suite(void) {
+    // Make the test script executable
+    chmod(TEST_SCRIPT_PATH, 0755);
+    return 0;
 }
 
 int clean_exec_suite(void) {
@@ -160,11 +142,12 @@ int clean_exec_suite(void) {
 
 int main(void) {
     CU_pSuite pSuite = NULL;
+    setenv("LDFL_CONFIG", "./tests/exec_test_config.json", 1);
 
     if (CUE_SUCCESS != CU_initialize_registry())
         return CU_get_error();
 
-    pSuite = CU_add_suite("exec_suite", clean_exec_suite);
+    pSuite = CU_add_suite("exec_suite", init_exec_suite, clean_exec_suite);
     if (NULL == pSuite) {
         CU_cleanup_registry();
         return CU_get_error();
@@ -181,6 +164,8 @@ int main(void) {
 
     CU_basic_set_mode(CU_BRM_VERBOSE);
     CU_basic_run_tests();
+    CU_get_error();
+    int ret = CU_get_number_of_failures();
     CU_cleanup_registry();
-    return CU_get_error();
-} 
+    return ret;
+}
