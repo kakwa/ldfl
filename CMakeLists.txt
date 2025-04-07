@@ -87,9 +87,6 @@ set_target_properties(fliar PROPERTIES VERSION ${fliar_VERSION}
 add_executable(fliar-cli fliar-wrapper.c)
 target_link_libraries(fliar-cli fliar ${PCRE2_LIBRARY} ${JANSSON_LIBRARY})
 
-# Add the exec wrapper
-add_executable(exec_wrapper tests/exec_wrapper.c)
-
 target_link_libraries(fliar-cli fliar ${PCRE2_LIBRARY} ${JANSSON_LIBRARY})
 
 if(BUILD_TESTS)
