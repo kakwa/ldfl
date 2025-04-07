@@ -17,11 +17,11 @@ jobs:
         sudo apt update
         sudo apt install -y cmake libpcre2-dev clang lcov libcunit1-dev libjansson-dev valgrind
 
-    - name: Set up CMake
-      uses: lukka/run-cmake@v1
+    - name: Configure
+      run: cmake -DCOVERAGE=ON -DBUILD_TESTS=ON .
 
     - name: Build
-      run: cmake -DCOVERAGE=ON -DBUILD_TESTS=ON .
+      run: make
 
     - name: Test
       run: make test
