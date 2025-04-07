@@ -284,7 +284,7 @@ compiled_mapping_t *ldfl_compiled_rules;
 #include LDFL_CONFIG
 #else
 // else json/dynamic configuration
-#include "config_json.h"
+#include "ldfl-config-parser.h"
 #endif
 
 #define LDFL_MAX_ARGS 8 // Limit to a maximum of 8 arguments for simplicity
