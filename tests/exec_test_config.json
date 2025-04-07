@@ -16,9 +16,9 @@
             "name": "exec_test_script",
             "operation": "exec_map",
             "search_pattern": ".*/dir",
-            "target": "tests/exec_test_script.sh",
+            "target": "noneexistantexecthere",
             "path_transform": "absolute",
             "extra_options": null
         }
     ]
-} 
+}

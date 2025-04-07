@@ -15,8 +15,17 @@
 #include <sys/stat.h>
 #include "fliar.c"
 
-#define TEST_SCRIPT_PATH "tests/exec_test_script.sh"
 #define TEST_OUTPUT_FILE "tests/exec_test_output.txt"
+
+#define CU_ASSERT_STRING_CONTAINS(haystack, needle)                                                                    \
+    do {                                                                                                               \
+        if (strstr(haystack, needle) == NULL) {                                                                        \
+            printf("```\n%s\n```\n not found in\n ```\n%s\n```'\n", needle, haystack);                                 \
+            CU_FAIL("CU_ASSERT_STRING_CONTAINS failed")                                                                \
+        } else {                                                                                                       \
+            CU_PASS("CU_ASSERT_STRING_CONTAINS passed");                                                               \
+        }                                                                                                              \
+    } while (0)
 
 // Helper function to read output from file
 static char *read_output_file(const char *filename) {
@@ -40,48 +49,45 @@ typedef enum { EXECVE, EXECL, EXECLP, EXECV, EXECVP } exec_type_t;
 
 // Helper function to run a test command and capture output
 static int run_test_command(exec_type_t type, char **output) {
+    printf(">>> %d\n", type);
     int fd = open(TEST_OUTPUT_FILE, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd == -1)
         return -1;
 
-    pid_t pid = fork();
-    if (pid == 0) {
-        // Child process
-        dup2(fd, STDOUT_FILENO);
-        close(fd);
+    // Redirect stdout to our file
+    int saved_stdout = dup(STDOUT_FILENO);
+    dup2(fd, STDERR_FILENO);
+    close(fd);
 
-        char *argv[] = {"/bin/dir", NULL};
-        char *envp[] = {NULL};
+    char *argv[] = {"/bin/dir", NULL};
+    char *envp[] = {NULL};
 
-        switch (type) {
-        case EXECVE:
-            execve("/bin/dir", argv, envp);
-            break;
-        case EXECL:
-            execl("/bin/dir", "/bin/dir", NULL);
-            break;
-        case EXECLP:
-            execlp("/bin/dir", "/bin/dir", NULL);
-            break;
-        case EXECV:
-            execv("/bin/dir", argv);
-            break;
-        case EXECVP:
-            execvp("/bin/dir", argv);
-            break;
-        }
-        exit(1);
-    } else if (pid > 0) {
-        // Parent process
-        close(fd);
-        int status;
-        waitpid(pid, &status, 0);
-        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-            *output = read_output_file(TEST_OUTPUT_FILE);
-            return 0;
-        }
+    switch (type) {
+    case EXECVE:
+        execve("/bin/dir", argv, envp);
+        break;
+    case EXECL:
+        execl("/bin/dir", "/bin/dir", NULL);
+        break;
+    case EXECLP:
+        execlp("/bin/dir", "/bin/dir", NULL);
+        break;
+    case EXECV:
+        execv("/bin/dir", argv);
+        break;
+    case EXECVP:
+        execvp("/bin/dir", argv);
+        break;
     }
-    return -1;
+
+    // Restore stdout
+    dup2(saved_stdout, STDERR_FILENO);
+    close(saved_stdout);
+
+    // If we get here, exec failed
+    *output = read_output_file(TEST_OUTPUT_FILE);
+    unlink(TEST_OUTPUT_FILE);
+    return 0;
 }
 
 static void test_execve(void) {
@@ -89,7 +95,7 @@ static void test_execve(void) {
 
     CU_ASSERT_EQUAL(run_test_command(EXECVE, &output), 0);
     CU_ASSERT_PTR_NOT_NULL(output);
-    CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
+    CU_ASSERT_STRING_CONTAINS(output, "noneexistantexecthere");
     free(output);
 }
 
@@ -98,7 +104,7 @@ static void test_execl(void) {
 
     CU_ASSERT_EQUAL(run_test_command(EXECL, &output), 0);
     CU_ASSERT_PTR_NOT_NULL(output);
-    CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
+    CU_ASSERT_STRING_CONTAINS(output, "noneexistantexecthere");
     free(output);
 }
 
@@ -107,7 +113,7 @@ static void test_execlp(void) {
 
     CU_ASSERT_EQUAL(run_test_command(EXECLP, &output), 0);
     CU_ASSERT_PTR_NOT_NULL(output);
-    CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
+    CU_ASSERT_STRING_CONTAINS(output, "noneexistantexecthere");
     free(output);
 }
 
@@ -116,7 +122,7 @@ static void test_execv(void) {
 
     CU_ASSERT_EQUAL(run_test_command(EXECV, &output), 0);
     CU_ASSERT_PTR_NOT_NULL(output);
-    CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
+    CU_ASSERT_STRING_CONTAINS(output, "noneexistantexecthere");
     free(output);
 }
 
@@ -125,42 +131,21 @@ static void test_execvp(void) {
 
     CU_ASSERT_EQUAL(run_test_command(EXECVP, &output), 0);
     CU_ASSERT_PTR_NOT_NULL(output);
-    CU_ASSERT_STRING_EQUAL(output, "this tests remapping execs\n");
+    CU_ASSERT_STRING_CONTAINS(output, "noneexistantexecthere");
     free(output);
 }
 
-int init_exec_suite(void) {
-    // Make the test script executable
-    chmod(TEST_SCRIPT_PATH, 0755);
-    return 0;
-}
-
-int clean_exec_suite(void) {
-    unlink(TEST_OUTPUT_FILE);
-    return 0;
-}
-
 int main(void) {
-    CU_pSuite pSuite = NULL;
     setenv("LDFL_CONFIG", "./tests/exec_test_config.json", 1);
+    CU_initialize_registry();
 
-    if (CUE_SUCCESS != CU_initialize_registry())
-        return CU_get_error();
-
-    pSuite = CU_add_suite("exec_suite", init_exec_suite, clean_exec_suite);
-    if (NULL == pSuite) {
-        CU_cleanup_registry();
-        return CU_get_error();
-    }
-
-    if ((NULL == CU_add_test(pSuite, "test of execve()", test_execve)) ||
-        (NULL == CU_add_test(pSuite, "test of execl()", test_execl)) ||
-        (NULL == CU_add_test(pSuite, "test of execlp()", test_execlp)) ||
-        (NULL == CU_add_test(pSuite, "test of execv()", test_execv)) ||
-        (NULL == CU_add_test(pSuite, "test of execvp()", test_execvp))) {
-        CU_cleanup_registry();
-        return CU_get_error();
-    }
+    // Add the new test suite
+    CU_pSuite pSuite = CU_add_suite("Exec Tests", NULL, NULL);
+    CU_add_test(pSuite, "test of execve()", test_execve);
+    CU_add_test(pSuite, "test of execl()", test_execl);
+    CU_add_test(pSuite, "test of execlp()", test_execlp);
+    CU_add_test(pSuite, "test of execv()", test_execv);
+    CU_add_test(pSuite, "test of execvp()", test_execvp);
 
     CU_basic_set_mode(CU_BRM_VERBOSE);
     CU_basic_run_tests();

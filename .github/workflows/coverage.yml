@@ -24,6 +24,9 @@ jobs:
       run: cmake -DCOVERAGE=ON -DBUILD_TESTS=ON .
 
     - name: Test
+      run: make test
+
+    - name: Coverage
       run: make coverage
 
     - name: Generate Coverage Report
