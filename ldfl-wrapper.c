@@ -69,20 +69,20 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case 'd':
         arguments->debug = true;
         break;
-    case ARGP_KEY_ARG:
-        if (strcmp(arg, "--") == 0) {
-            // Start collecting command arguments
-            arguments->command_args = &state->argv[state->next];
-            arguments->command_argc = state->argc - state->next;
-            state->next             = state->argc;
-        } else if (!arguments->command_args) {
-            // Still collecting non-command arguments
-            return ARGP_ERR_UNKNOWN;
+    case ARGP_KEY_ARGS:
+        arguments->command_argc = state->argc - state->next;
+        arguments->command_args = calloc(arguments->command_argc, sizeof(char *));
+        if (!arguments->command_args) {
+            argp_failure(state, 1, ENOMEM, "Memory allocation failed");
+        }
+        for (int i = 0; i < arguments->command_argc; i++) {
+            arguments->command_args[i] = state->argv[state->next + i];
         }
         break;
     default:
         return ARGP_ERR_UNKNOWN;
     }
+
     return 0;
 }
 

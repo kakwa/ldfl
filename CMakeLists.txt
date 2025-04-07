@@ -80,8 +80,9 @@ include_directories(./inc/ ${ZLIB_INCLUDE_DIRS} ${PCRE2_INCLUDE_DIRS}
 
 file(GLOB ldfl_SOURCES lib/*.c)
 add_library(ldfl ${SHARED} ${ldfl_SOURCES})
+target_link_libraries(ldfl ${PCRE2_LIBRARY} ${CUNIT_LIBRARY} ${JANSSON_LIBRARY})
 set_target_properties(ldfl PROPERTIES VERSION ${ldfl_VERSION}
-                                       SOVERSION ${ldfl_VERSION_MAJOR})
+                                      SOVERSION ${ldfl_VERSION_MAJOR})
 
 # Compile the executable
 add_executable(ldfl-cli ldfl-wrapper.c)
