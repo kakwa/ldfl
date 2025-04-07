@@ -44,6 +44,7 @@ void test_parse_arguments(void) {
     CU_ASSERT(args.command_argc == 2);
     CU_ASSERT_STRING_EQUAL(args.command_args[0], "ls");
     CU_ASSERT_STRING_EQUAL(args.command_args[1], "-l");
+    free(args.command_args);
 }
 
 void test_debug_flag(void) {
@@ -64,6 +65,7 @@ void test_debug_flag(void) {
 
     // Verify debug flag
     CU_ASSERT(args.debug == true);
+    free(args.command_args);
 }
 
 void test_library_path(void) {
@@ -85,6 +87,7 @@ void test_library_path(void) {
 
     // Verify library path
     CU_ASSERT_STRING_EQUAL(args.library_path, "custom_lib.so");
+    free(args.command_args);
 }
 
 void test_validate_arguments(void) {
