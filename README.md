@@ -7,7 +7,17 @@
 
 ## Presentation
 
-LDFL (LD File Liar) is a `LD_PRELOAD` library to remap file and directory path.
+LDFL (LD File Liar) is a powerful `LD_PRELOAD` library that intercepts and modify `libc` file system operations. It allows you to:
+
+- **Log Filesystem Interactions**: File & Directory manipulation can be logged to syslog or stderr
+- **Remap File Paths**: Redirect file access to different locations
+- **Control File Access**: Restrict or allow access to specific files/directories
+- **Modify File Permissions**: Change ownership and permissions on-the-fly
+- **Memory-based Files**: Serve files directly from memory
+- **Static Content**: Serve predefined static content
+- **Executable Redirection**: Redirect executable paths
+
+This tool can be used on existing binaries or can be included with a static configuration header inside your projects.
 
 ## Dependencies
 
