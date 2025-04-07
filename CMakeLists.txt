@@ -84,8 +84,11 @@ set_target_properties(fliar PROPERTIES VERSION ${fliar_VERSION}
                                        SOVERSION ${fliar_VERSION_MAJOR})
 
 # Compile the executable
-add_executable(fliar-cli fliar.c)
-target_link_libraries(fliar ${PCRE2_LIBRARY} ${JANSSON_LIBRARY})
+add_executable(fliar-cli fliar-wrapper.c)
+target_link_libraries(fliar-cli fliar ${PCRE2_LIBRARY} ${JANSSON_LIBRARY})
+
+# Add the exec wrapper
+add_executable(exec_wrapper tests/exec_wrapper.c)
 
 target_link_libraries(fliar-cli fliar ${PCRE2_LIBRARY} ${JANSSON_LIBRARY})
 
@@ -165,6 +168,10 @@ install(
   RUNTIME DESTINATION ${BIN_INSTALL_DIR}
   LIBRARY DESTINATION ${LIB_INSTALL_DIR}
   ARCHIVE DESTINATION ${LIB_INSTALL_DIR})
+
+# Set the default library path for fliar.c
+set(DEFAULT_LIB_PATH "${CMAKE_INSTALL_PREFIX}/${LIB_INSTALL_DIR}/libfliar.so")
+add_definitions(-DDEFAULT_LIB_PATH="${DEFAULT_LIB_PATH}")
 
 # check if Doxygen is installed
 if(BUILD_DOC)
