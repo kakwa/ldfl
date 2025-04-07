@@ -61,24 +61,8 @@
       "extra_options": "kakwa:kakwa|0700|0600"
     },
     {
-      "name": "allow /dev",
-      "search_pattern": "^/dev/.*",
-      "operation": "noop",
-      "target": null,
-      "path_transform": "absolute",
-      "extra_options": null
-    },
-    {
       "name": "allow /proc",
       "search_pattern": "^/proc/.*",
-      "operation": "noop",
-      "target": null,
-      "path_transform": "absolute",
-      "extra_options": null
-    },
-    {
-      "name": "allow /sys",
-      "search_pattern": "^/sys/.*",
       "operation": "noop",
       "target": null,
       "path_transform": "absolute",
