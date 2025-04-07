@@ -1,0 +1,19 @@
+{
+  "settings": {
+    "log_mask": [
+      "fn_call"
+    ],
+    "log_level": "debug",
+    "logger": "syslog"
+  },
+  "mappings": [
+    {
+      "name": "catch all",
+      "search_pattern": "^.",
+      "operation": "noop",
+      "target": null,
+      "path_transform": "absolute",
+      "extra_options": null
+    }
+  ]
+} 
