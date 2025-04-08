@@ -99,12 +99,6 @@ typedef enum {
  * where `name` is `NULL` and `operation` is `LDFL_OP_END`. This sentinel entry is used
  * to mark the end of the array.
  *
- * @example
- * ldfl_mapping_t mappings[] = {
- *     {"mapping1", "pattern1", LDFL_OP_MAP,  "target1",  NULL},
- *     {"mapping2", "pattern2", LDFL_OP_PERM, "target2", "kakwa:kakwa|0700|0600"},
- *     {NULL, NULL, LDFL_OP_END, NULL, NULL}  // Terminating entry
- * };
  */
 typedef struct {
     const char      *name;           /**< Name of the mapping rule. Only informational */

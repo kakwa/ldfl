@@ -1,3 +1,4 @@
+/** @cond */
 #include <jansson.h>
 #include <string.h>
 #include <stdlib.h>
@@ -194,3 +195,4 @@ void ldfl_free_json_config(void) {
         ldfl_mapping = NULL;
     }
 }
+/** @endcond */
