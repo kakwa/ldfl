@@ -188,6 +188,3 @@ if(BUILD_DOC)
       "Doxygen need to be installed to generate the doxygen documentation")
   endif(DOXYGEN_FOUND)
 endif(BUILD_DOC)
-
-# install header file
-install(FILES inc/ldfl.h DESTINATION ${INCLUDE_INSTALL_DIR})
