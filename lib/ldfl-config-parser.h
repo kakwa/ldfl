@@ -104,8 +104,7 @@ int ldfl_parse_json_config(const char *config_file) {
     json_error_t error;
     json_t      *root = json_load_file(config_file, 0, &error);
     if (!root) {
-        fprintf(stderr, "Error parsing JSON config '%s': %s (line %d, column %d)\n", config_file, error.text,
-                error.line, error.column);
+        fprintf(stderr, "Error parsing JSON config '%s': %s (line %d, column %d)\n", config_file, error.text, error.line, error.column);
         return -1;
     }
 

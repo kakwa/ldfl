@@ -38,11 +38,10 @@ const char *argp_program_bug_address = "https://github.com/kakwa/ldfl/issues";
 
 static char doc[] = "\nLDFL - libldfl.so LD_PRELOAD wrapper for path remapping";
 
-static struct argp_option options[] = {
-    {"config", 'c', "CONFIG_FILE", 0, "Configuration file for path remapping"},
-    {"library", 'l', "LIBRARY_PATH", 0, "Path to the ldfl library (default: " DEFAULT_LIB_PATH ")"},
-    {"debug", 'd', NULL, 0, "Debug Output"},
-    {0}};
+static struct argp_option options[] = {{"config", 'c', "CONFIG_FILE", 0, "Configuration file for path remapping"},
+                                       {"library", 'l', "LIBRARY_PATH", 0, "Path to the ldfl library (default: " DEFAULT_LIB_PATH ")"},
+                                       {"debug", 'd', NULL, 0, "Debug Output"},
+                                       {0}};
 
 /* A description of the arguments we accept. */
 static char args_doc[] = "-c CONFIG_FILE -- COMMAND [ARGS...]";

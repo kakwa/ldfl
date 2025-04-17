@@ -71,8 +71,7 @@ void test_ldfl_stderr_logger(void) {
     // Log a message above the level
     ldfl_stderr_logger(LDFL_LOG_ALL, LOG_ERR, "This is an error!");
     fflush(stderr_stream);
-    CU_ASSERT_STRING_EQUAL_FATAL(stderr_buffer + strlen("LOG_WARNING:  This is a warning: 42") + 1,
-                                 "LOG_ERR:      This is an error!\n");
+    CU_ASSERT_STRING_EQUAL_FATAL(stderr_buffer + strlen("LOG_WARNING:  This is a warning: 42") + 1, "LOG_ERR:      This is an error!\n");
 }
 
 // Test ldfl_syslog_logger
