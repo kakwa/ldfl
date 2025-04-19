@@ -1200,12 +1200,22 @@ int execl(const char *pathname, const char *arg, ...) {
     va_start(args, arg);
     ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG, "execl called: pathname=%s, arg=%s", pathname, arg);
     char *reworked_path = apply_rules_and_cleanup("execl", pathname, op_mask);
-    // TODO argv[0]
+
+    // Temporarily swap argv[0] if path was remapped
+    char *original_arg = NULL;
+    if (reworked_path && strcmp(pathname, reworked_path) != 0) {
+        original_arg = (char *)arg;
+        arg          = reworked_path;
+    }
 
     va_end(args);
     int ret = ldfl_variadic_str_wrap(real_execl, arg, reworked_path, arg);
     LDFL_LOG_ERR(ret == 0, "real_execl failed: pathname=%s, errno=%d (%s)", reworked_path, errno, strerror(errno));
 
+    // Restore original argv[0] if we swapped it
+    if (original_arg) {
+        arg = original_arg;
+    }
     free(reworked_path);
     return ret;
 }
@@ -1218,11 +1228,21 @@ int execlp(const char *file, const char *arg, ...) {
     ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG, "execlp called: file=%s, arg=%s", file, arg);
     va_end(args);
     char *reworked_path = apply_rules_and_cleanup("execlp", file, op_mask);
-    // TODO argv[0]
+
+    // Temporarily swap argv[0] if path was remapped
+    char *original_arg = NULL;
+    if (reworked_path && strcmp(file, reworked_path) != 0) {
+        original_arg = (char *)arg;
+        arg          = reworked_path;
+    }
 
     int ret = ldfl_variadic_str_wrap(real_execlp, arg, reworked_path, arg);
     LDFL_LOG_ERR(ret == 0, "real_execlp failed: pathname=%s, errno=%d (%s)", reworked_path, errno, strerror(errno));
 
+    // Restore original argv[0] if we swapped it
+    if (original_arg) {
+        arg = original_arg;
+    }
     free(reworked_path);
     return ret;
 }
