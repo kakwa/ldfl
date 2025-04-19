@@ -23,7 +23,7 @@ void test_multi_rule_matching(void) {
     int                  num_rules      = 0;
 
     // Find matching rules
-    bool found = ldfl_find_matching_rules("open", test_path, LDFL_OP_MAP, &matching_rules, &num_rules, &match_data);
+    bool found = ldfl_find_matching_rules("open", test_path, LDFL_OP_MAP | LDFL_OP_NOOP | LDFL_OP_RO, &matching_rules, &num_rules, &match_data);
     CU_ASSERT_EQUAL(found, true);
     CU_ASSERT_EQUAL(num_rules, 3);
 
