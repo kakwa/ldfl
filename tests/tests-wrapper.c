@@ -235,12 +235,15 @@ int main() {
 
     // Add the tests to the suite
     if ((NULL == CU_add_test(pSuite, "test_parse_arguments", test_parse_arguments)) ||
-        (NULL == CU_add_test(pSuite, "test_debug_flag", test_debug_flag)) || (NULL == CU_add_test(pSuite, "test_library_path", test_library_path)) ||
+        (NULL == CU_add_test(pSuite, "test_debug_flag", test_debug_flag)) ||
+        (NULL == CU_add_test(pSuite, "test_library_path", test_library_path)) ||
         (NULL == CU_add_test(pSuite, "test_validate_arguments", test_validate_arguments)) ||
         (NULL == CU_add_test(pSuite, "test_setup_environment_success", test_setup_environment_success)) ||
         (NULL == CU_add_test(pSuite, "test_setup_environment_invalid_config", test_setup_environment_invalid_config)) ||
-        (NULL == CU_add_test(pSuite, "test_setup_environment_invalid_library", test_setup_environment_invalid_library)) ||
-        (NULL == CU_add_test(pSuite, "test_setup_environment_default_library", test_setup_environment_default_library))) {
+        (NULL ==
+         CU_add_test(pSuite, "test_setup_environment_invalid_library", test_setup_environment_invalid_library)) ||
+        (NULL ==
+         CU_add_test(pSuite, "test_setup_environment_default_library", test_setup_environment_default_library))) {
         CU_cleanup_registry();
         return CU_get_error();
     }

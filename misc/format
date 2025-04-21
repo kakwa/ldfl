@@ -10,7 +10,7 @@ CLANG_FORMAT_STYLE="{
     AllowShortFunctionsOnASingleLine: None,
     SortIncludes: false,
     KeepEmptyLinesAtTheStartOfBlocks: false,
-    ColumnLimit: 150,
+    ColumnLimit: 120,
     AlignConsecutiveAssignments: true,
     AlignConsecutiveDeclarations: true,
     AlignTrailingComments: true,

@@ -17,14 +17,14 @@
 
 #define TEST_OUTPUT_FILE "tests/exec_test_output.txt"
 
-#define CU_ASSERT_STRING_CONTAINS(haystack, needle)                                                                                                  \
-    do {                                                                                                                                             \
-        if (strstr(haystack, needle) == NULL) {                                                                                                      \
-            printf("```\n%s\n```\n not found in\n ```\n%s\n```'\n", needle, haystack);                                                               \
-            CU_FAIL("CU_ASSERT_STRING_CONTAINS failed")                                                                                              \
-        } else {                                                                                                                                     \
-            CU_PASS("CU_ASSERT_STRING_CONTAINS passed");                                                                                             \
-        }                                                                                                                                            \
+#define CU_ASSERT_STRING_CONTAINS(haystack, needle)                                                                    \
+    do {                                                                                                               \
+        if (strstr(haystack, needle) == NULL) {                                                                        \
+            printf("```\n%s\n```\n not found in\n ```\n%s\n```'\n", needle, haystack);                                 \
+            CU_FAIL("CU_ASSERT_STRING_CONTAINS failed")                                                                \
+        } else {                                                                                                       \
+            CU_PASS("CU_ASSERT_STRING_CONTAINS passed");                                                               \
+        }                                                                                                              \
     } while (0)
 
 // Helper function to read output from file
