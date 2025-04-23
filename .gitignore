@@ -69,6 +69,7 @@ CMakeDoxygenDefaults.cmake
 Doxyfile
 docs/doxygen-awesome-css/
 docs/html/
+exec_test_output.txt
 
 *.swp
 *.swo
