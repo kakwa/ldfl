@@ -18,7 +18,8 @@
       "operation": "map",
       "target": "/tmp/$1",
       "path_transform": "absolute",
-      "extra_options": null
+      "extra_options": null,
+      "final": false
     },
     {
       "name": "inc redirect",
@@ -26,7 +27,8 @@
       "operation": "map",
       "target": "$1/lib/$2",
       "path_transform": "absolute",
-      "extra_options": null
+      "extra_options": null,
+      "final": false
     },
     {
       "name": "executable redirect",
@@ -34,7 +36,8 @@
       "operation": "exec_map",
       "target": "/opt/ldfl/bin/\\1",
       "path_transform": "absolute",
-      "extra_options": null
+      "extra_options": null,
+      "final": false
     },
     {
       "name": "memory open",
@@ -42,7 +45,8 @@
       "operation": "mem_open",
       "target": null,
       "path_transform": "absolute",
-      "extra_options": null
+      "extra_options": null,
+      "final": false
     },
     {
       "name": "static file",
@@ -50,7 +54,8 @@
       "operation": "static",
       "target": "default_blob",
       "path_transform": "absolute",
-      "extra_options": null
+      "extra_options": null,
+      "final": false
     },
     {
       "name": "change data perm",
@@ -58,7 +63,8 @@
       "operation": "perm",
       "target": null,
       "path_transform": "absolute",
-      "extra_options": "kakwa:kakwa|0700|0600"
+      "extra_options": "kakwa:kakwa|0700|0600",
+      "final": false
     },
     {
       "name": "allow /proc",
@@ -66,7 +72,8 @@
       "operation": "noop",
       "target": null,
       "path_transform": "absolute",
-      "extra_options": null
+      "extra_options": null,
+      "final": false
     },
     {
       "name": "default & deny",
@@ -74,7 +81,8 @@
       "operation": "deny",
       "target": null,
       "path_transform": "absolute",
-      "extra_options": null
+      "extra_options": null,
+      "final": true
     }
   ]
 } 

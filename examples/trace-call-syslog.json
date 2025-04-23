@@ -13,7 +13,8 @@
       "operation": "noop",
       "target": null,
       "path_transform": "absolute",
-      "extra_options": null
+      "extra_options": null,
+      "final": true
     }
   ]
 } 

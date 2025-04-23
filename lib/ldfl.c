@@ -106,7 +106,7 @@ typedef struct {
     ldfl_operation_t operation;      /**< Operation type. */
     const void      *target;         /**< Replacement regex for the file/dir path. */
     ldfl_path_type_t path_transform; /**< Use the unaltered or absolute path in the matching*/
-    const bool       final;          /**< Stop searching for other rules if true. Continue if false */
+    bool             final;          /**< Stop searching for other rules if true. Continue if false */
     const char      *extra_options;  /**< Extra options options. */
 } ldfl_mapping_t;
 
@@ -465,7 +465,7 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t o
             continue;
         }
 
-        // Filter out rules that don’t match the op_mask or don't have regex
+        // Filter out rules that don't match the op_mask or don't have regex
         if (!(operation & op_mask) || rule->matching_regex == NULL) {
             ldfl_setting.logger(
                 LDFL_LOG_RULE_SEARCH, LOG_DEBUG,

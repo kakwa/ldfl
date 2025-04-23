@@ -144,6 +144,7 @@ int ldfl_parse_json_config(const char *config_file) {
             json_t *target         = json_object_get(mapping, "target");
             json_t *path_transform = json_object_get(mapping, "path_transform");
             json_t *extra_options  = json_object_get(mapping, "extra_options");
+            json_t *final          = json_object_get(mapping, "final");
 
             if (name && search_pattern && operation) {
                 ldfl_mapping[index].name           = strdup(json_string_value(name));
@@ -167,6 +168,12 @@ int ldfl_parse_json_config(const char *config_file) {
                 } else {
                     ldfl_mapping[index].extra_options = NULL;
                 }
+
+                if (final && json_is_boolean(final)) {
+                    ldfl_mapping[index].final = json_boolean_value(final);
+                } else {
+                    ldfl_mapping[index].final = false; // Default to false if not specified
+                }
             }
         }
 
@@ -177,6 +184,7 @@ int ldfl_parse_json_config(const char *config_file) {
         ldfl_mapping[mapping_count].target         = NULL;
         ldfl_mapping[mapping_count].path_transform = LDFL_PATH_ABS;
         ldfl_mapping[mapping_count].extra_options  = NULL;
+        ldfl_mapping[mapping_count].final          = false;
     }
 
     json_decref(root);
