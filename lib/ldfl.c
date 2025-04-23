@@ -72,15 +72,15 @@ typedef enum {
  * @brief enum for the type of operations
  */
 typedef enum {
-    LDFL_OP_NOOP     = 1ULL << 0, /**< No operation. */
-    LDFL_OP_MAP      = 1ULL << 1, /**< Map operation. */
-    LDFL_OP_EXEC_MAP = 1ULL << 2, /**< Executable map. */
-    LDFL_OP_MEM_OPEN = 1ULL << 3, /**< Memory open. */
-    LDFL_OP_STATIC   = 1ULL << 4, /**< Static file operation. */
-    LDFL_OP_PERM     = 1ULL << 5, /**< Change permissions/ownership, use extra_option "user|group|0600|0700" */
-    LDFL_OP_DENY     = 1ULL << 6, /**< Deny access. */
-    LDFL_OP_RO       = 1ULL << 7, /**< Restrict to Read Only access. */
-    LDFL_OP_END      = 0ULL       /**< End marker. */
+    LDFL_OP_NOOP       = 1ULL << 0, /**< No operation. */
+    LDFL_OP_PATH_REDIR = 1ULL << 1, /**< Map operation. */
+    LDFL_OP_EXEC_REDIR = 1ULL << 2, /**< Executable map. */
+    LDFL_OP_MEM_OPEN   = 1ULL << 3, /**< Memory open. */
+    LDFL_OP_MEM_DATA   = 1ULL << 4, /**< Static file operation. */
+    LDFL_OP_PERM       = 1ULL << 5, /**< Change permissions/ownership, use extra_option "user|group|0600|0700" */
+    LDFL_OP_DENY       = 1ULL << 6, /**< Deny access. */
+    LDFL_OP_RO         = 1ULL << 7, /**< Restrict to Read Only access. */
+    LDFL_OP_END        = 0ULL       /**< End marker. */
 } ldfl_operation_t;
 
 /**
@@ -106,6 +106,7 @@ typedef struct {
     ldfl_operation_t operation;      /**< Operation type. */
     const void      *target;         /**< Replacement regex for the file/dir path. */
     ldfl_path_type_t path_transform; /**< Use the unaltered or absolute path in the matching*/
+    const bool       final;          /**< Stop searching for other rules if true. Continue if false */
     const char      *extra_options;  /**< Extra options options. */
 } ldfl_mapping_t;
 
@@ -149,13 +150,13 @@ const char *ldfl_operation_to_string(ldfl_operation_t op) {
     switch (op) {
     case LDFL_OP_NOOP:
         return "NOOP";
-    case LDFL_OP_MAP:
+    case LDFL_OP_PATH_REDIR:
         return "MAP";
-    case LDFL_OP_EXEC_MAP:
+    case LDFL_OP_EXEC_REDIR:
         return "EXEC_MAP";
     case LDFL_OP_MEM_OPEN:
         return "MEM_OPEN";
-    case LDFL_OP_STATIC:
+    case LDFL_OP_MEM_DATA:
         return "STATIC";
     case LDFL_OP_PERM:
         return "PERM";
@@ -615,7 +616,7 @@ void ldfl_apply_rules(compiled_mapping_t **mapping_rules, int num_rules, pcre2_m
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
             break;
-        case LDFL_OP_MAP:
+        case LDFL_OP_PATH_REDIR:
             new_pathname = ldfl_substitute_path(mapping_rules[i]->matching_regex, match_group[i], pathname_in,
                                                 mapping_rules[i]->mapping->target);
             if (!new_pathname) {
@@ -628,10 +629,10 @@ void ldfl_apply_rules(compiled_mapping_t **mapping_rules, int num_rules, pcre2_m
             *pathname_out = new_pathname;
 
             ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_DEBUG,
-                                "LDFL_OP_MAP Rule [%s] applied, path '%s' rewritten to '%s'",
+                                "LDFL_OP_PATH_REDIR Rule [%s] applied, path '%s' rewritten to '%s'",
                                 mapping_rules[i]->mapping->name, pathname_in, *pathname_out);
             break;
-        case LDFL_OP_EXEC_MAP:
+        case LDFL_OP_EXEC_REDIR:
             new_pathname = ldfl_substitute_path(mapping_rules[i]->matching_regex, match_group[i], pathname_in,
                                                 mapping_rules[i]->mapping->target);
             if (!new_pathname) {
@@ -644,7 +645,7 @@ void ldfl_apply_rules(compiled_mapping_t **mapping_rules, int num_rules, pcre2_m
             *pathname_out = new_pathname;
 
             ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_DEBUG,
-                                "LDFL_OP_EXEC_MAP Rule [%s] applied, executable path '%s' rewritten to '%s'",
+                                "LDFL_OP_EXEC_REDIR Rule [%s] applied, executable path '%s' rewritten to '%s'",
                                 mapping_rules[i]->mapping->name, pathname_in, *pathname_out);
             break;
         case LDFL_OP_MEM_OPEN:
@@ -652,10 +653,10 @@ void ldfl_apply_rules(compiled_mapping_t **mapping_rules, int num_rules, pcre2_m
             stpcpy(*pathname_out, pathname_in);
             ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING, "Operation LDFL_OP_MEM_OPEN not yet handle");
             break;
-        case LDFL_OP_STATIC:
+        case LDFL_OP_MEM_DATA:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
-            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING, "Operation LDFL_OP_STATIC not yet handle");
+            ldfl_setting.logger(LDFL_LOG_MAPPING_RULE_APPLY, LOG_WARNING, "Operation LDFL_OP_MEM_DATA not yet handle");
             break;
         case LDFL_OP_PERM:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
@@ -889,8 +890,8 @@ static void __attribute__((destructor(101))) ldfl_dinit() {
 
 FILE *fopen(const char *restrict pathname, const char *restrict mode) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("fopen called: pathname=%s, mode=%s", pathname, mode);
 
@@ -906,8 +907,8 @@ FILE *fopen(const char *restrict pathname, const char *restrict mode) {
 
 FILE *fopen64(const char *pathname, const char *mode) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("fopen64 called: pathname=%s, mode=%s", pathname, mode);
 
@@ -923,8 +924,8 @@ FILE *fopen64(const char *pathname, const char *mode) {
 
 int openat(int dirfd, const char *pathname, int flags, ...) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
     va_list args;
     va_start(args, flags);
 
@@ -932,7 +933,7 @@ int openat(int dirfd, const char *pathname, int flags, ...) {
                   va_arg(args, mode_t));
 
     char *reworked_path = apply_rules_and_cleanup("openat", pathname, op_mask);
-    int ret = ldfl_variadic_mode_wrap(real_openat, dirfd, reworked_path, flags);
+    int   ret           = ldfl_variadic_mode_wrap(real_openat, dirfd, reworked_path, flags);
 
     LDFL_LOG_ERR(ret, "real_openat failed: dirfd=%d, pathname=%s, flags=%d, errno=%d (%s)", dirfd, reworked_path, flags,
                  errno, strerror(errno));
@@ -944,8 +945,8 @@ int openat(int dirfd, const char *pathname, int flags, ...) {
 
 int open(const char *pathname, int flags, ... /* mode_t mode */) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
     va_list args;
     va_start(args, flags);
 
@@ -964,8 +965,8 @@ int open(const char *pathname, int flags, ... /* mode_t mode */) {
 
 int open64(const char *pathname, int flags, ... /* mode_t mode */) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
     va_list args;
     va_start(args, flags);
 
@@ -984,8 +985,8 @@ int open64(const char *pathname, int flags, ... /* mode_t mode */) {
 
 int openat64(int dirfd, const char *pathname, int flags, ... /* mode_t mode */) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
     va_list args;
     va_start(args, flags);
 
@@ -1004,8 +1005,8 @@ int openat64(int dirfd, const char *pathname, int flags, ... /* mode_t mode */) 
 
 int rename(const char *oldpath, const char *newpath) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("rename called: oldpath=%s, newpath=%s", oldpath, newpath);
 
@@ -1023,8 +1024,8 @@ int rename(const char *oldpath, const char *newpath) {
 
 int renameat2(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, unsigned int flags) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("renameat2 called: olddirfd=%d, oldpath=%s, newdirfd=%d, newpath=%s, flags=%u", olddirfd, oldpath,
                   newdirfd, newpath, flags);
@@ -1045,8 +1046,8 @@ int renameat2(int olddirfd, const char *oldpath, int newdirfd, const char *newpa
 
 int renameat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("renameat called: olddirfd=%d, oldpath=%s, newdirfd=%d, newpath=%s", olddirfd, oldpath, newdirfd,
                   newpath);
@@ -1065,8 +1066,8 @@ int renameat(int olddirfd, const char *oldpath, int newdirfd, const char *newpat
 
 int unlink(const char *pathname) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("unlink called: pathname=%s", pathname);
 
@@ -1081,8 +1082,8 @@ int unlink(const char *pathname) {
 
 int unlinkat(int dirfd, const char *pathname, int flags) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("unlinkat called: dirfd=%d, pathname=%s, flags=%d", dirfd, pathname, flags);
 
@@ -1098,8 +1099,8 @@ int unlinkat(int dirfd, const char *pathname, int flags) {
 
 int utime(const char *pathname, const struct utimbuf *times) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("utimes called: pathname=%s, times=[%ld, %ld]", pathname, (times == NULL) ? 0 : times->actime,
                   (times == NULL) ? 0 : times->modtime);
@@ -1115,8 +1116,8 @@ int utime(const char *pathname, const struct utimbuf *times) {
 
 int utimes(const char *pathname, const struct timeval times[2]) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("utimes called: pathname=%s, times=[%ld:%ld, %ld:%ld]", pathname,
                   (times == NULL) ? 0 : times[0].tv_sec, (times == NULL) ? 0 : times[0].tv_usec,
@@ -1133,8 +1134,8 @@ int utimes(const char *pathname, const struct timeval times[2]) {
 
 int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("utimensat called: dirfd=%d, pathname=%s, times=[%ld, %ld], flags=%d", dirfd, pathname,
                   (times == NULL) ? 0 : times[0].tv_sec, (times == NULL) ? 0 : times[1].tv_sec, flags);
@@ -1151,8 +1152,8 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2], i
 
 int access(const char *pathname, int mode) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("access called: pathname=%s, mode=%d", pathname, mode);
 
@@ -1168,8 +1169,8 @@ int access(const char *pathname, int mode) {
 
 int fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("fstatat called: dirfd=%d, pathname=%s, flags=%d", dirfd, pathname, flags);
 
@@ -1185,8 +1186,8 @@ int fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags) {
 
 int __xstat(int version, const char *pathname, struct stat *statbuf) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("__xstat called: version=%d, pathname=%s", version, pathname);
 
@@ -1202,8 +1203,8 @@ int __xstat(int version, const char *pathname, struct stat *statbuf) {
 
 int __xstat64(int version, const char *pathname, struct stat *statbuf) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("__xstat64 called: version=%d, pathname=%s", version, pathname);
 
@@ -1219,8 +1220,8 @@ int __xstat64(int version, const char *pathname, struct stat *statbuf) {
 
 int __lxstat(int version, const char *pathname, struct stat *statbuf) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("__lxstat called: version=%d, pathname=%s", version, pathname);
 
@@ -1236,8 +1237,8 @@ int __lxstat(int version, const char *pathname, struct stat *statbuf) {
 
 int __fxstatat(int version, int dirfd, const char *pathname, struct stat *statbuf, int flags) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("__fxstatat called: version=%d, dirfd=%d, pathname=%s, flags=%d", version, dirfd, pathname, flags);
 
@@ -1253,7 +1254,7 @@ int __fxstatat(int version, int dirfd, const char *pathname, struct stat *statbu
 
 int execve(const char *pathname, char *const argv[], char *const envp[]) {
     RINIT;
-    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_EXEC_MAP | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_EXEC_REDIR | LDFL_OP_DENY;
 
     char *argv_str = ldfl_render_nullable_array(argv);
     char *envp_str = ldfl_render_nullable_array(envp);
@@ -1281,7 +1282,7 @@ int execve(const char *pathname, char *const argv[], char *const envp[]) {
 
 int execl(const char *pathname, const char *arg, ...) {
     RINIT;
-    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_EXEC_MAP | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_EXEC_REDIR | LDFL_OP_DENY;
     va_list  args;
     va_start(args, arg);
 
@@ -1307,7 +1308,7 @@ int execl(const char *pathname, const char *arg, ...) {
 
 int execlp(const char *file, const char *arg, ...) {
     RINIT;
-    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_EXEC_MAP | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_EXEC_REDIR | LDFL_OP_DENY;
     va_list  args;
     va_start(args, arg);
 
@@ -1333,7 +1334,7 @@ int execlp(const char *file, const char *arg, ...) {
 
 int execv(const char *pathname, char *const argv[]) {
     RINIT;
-    uint64_t op_mask  = LDFL_OP_NOOP | LDFL_OP_EXEC_MAP | LDFL_OP_DENY;
+    uint64_t op_mask  = LDFL_OP_NOOP | LDFL_OP_EXEC_REDIR | LDFL_OP_DENY;
     char    *argv_str = ldfl_render_nullable_array(argv);
 
     LDFL_LOG_CALL("execv called: pathname=%s, argv=%s", pathname, argv_str);
@@ -1358,7 +1359,7 @@ int execv(const char *pathname, char *const argv[]) {
 
 int execvp(const char *file, char *const argv[]) {
     RINIT;
-    uint64_t op_mask  = LDFL_OP_NOOP | LDFL_OP_EXEC_MAP | LDFL_OP_DENY;
+    uint64_t op_mask  = LDFL_OP_NOOP | LDFL_OP_EXEC_REDIR | LDFL_OP_DENY;
     char    *argv_str = ldfl_render_nullable_array(argv);
 
     LDFL_LOG_CALL("execvp called: file=%s, argv=%s", file, argv_str);
@@ -1383,8 +1384,8 @@ int execvp(const char *file, char *const argv[]) {
 
 DIR *opendir(const char *name) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("opendir called: name=%s", name);
 
@@ -1399,8 +1400,8 @@ DIR *opendir(const char *name) {
 
 int mkdir(const char *pathname, mode_t mode) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("mkdir called: pathname=%s, mode=%o", pathname, mode);
 
@@ -1416,8 +1417,8 @@ int mkdir(const char *pathname, mode_t mode) {
 
 int mkdirat(int dirfd, const char *pathname, mode_t mode) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("mkdirat called: dirfd=%d, pathname=%s, mode=%o", dirfd, pathname, mode);
 
@@ -1433,8 +1434,8 @@ int mkdirat(int dirfd, const char *pathname, mode_t mode) {
 
 int rmdir(const char *pathname) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("rmdir called: pathname=%s", pathname);
 
@@ -1449,8 +1450,8 @@ int rmdir(const char *pathname) {
 
 int chdir(const char *pathname) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("chdir called: pathname=%s", pathname);
 
@@ -1465,8 +1466,8 @@ int chdir(const char *pathname) {
 
 int symlink(const char *target, const char *linkpathname) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("symlink called: target=%s, linkpathname=%s", target, linkpathname);
 
@@ -1484,8 +1485,8 @@ int symlink(const char *target, const char *linkpathname) {
 
 ssize_t readlink(const char *pathname, char *buf, size_t bufsiz) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("readlink called: pathname=%s, bufsiz=%zu", pathname, bufsiz);
 
@@ -1500,8 +1501,8 @@ ssize_t readlink(const char *pathname, char *buf, size_t bufsiz) {
 
 int link(const char *oldpath, const char *newpath) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("link called: oldpath=%s, newpath=%s", oldpath, newpath);
 
@@ -1519,8 +1520,8 @@ int link(const char *oldpath, const char *newpath) {
 
 int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("linkat called: olddirfd=%d, oldpath=%s, newdirfd=%d, newpath=%s, flags=%d", olddirfd, oldpath,
                   newdirfd, newpath, flags);
@@ -1541,8 +1542,8 @@ int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
 
 int chmod(const char *pathname, mode_t mode) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("chmod called: pathname=%s, mode=%o", pathname, mode);
 
@@ -1558,8 +1559,8 @@ int chmod(const char *pathname, mode_t mode) {
 
 int truncate(const char *pathname, off_t length) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("truncate called: pathname=%s, length=%ld", pathname, length);
 
@@ -1575,8 +1576,8 @@ int truncate(const char *pathname, off_t length) {
 
 int faccessat(int dirfd, const char *pathname, int mode, int flags) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("faccessat called: dirfd=%d, pathname=%s, mode=%d, flags=%d", dirfd, pathname, mode, flags);
 
@@ -1592,8 +1593,8 @@ int faccessat(int dirfd, const char *pathname, int mode, int flags) {
 
 int stat(const char *pathname, struct stat *statbuf) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("stat called: pathname=%s", pathname);
 
@@ -1608,8 +1609,8 @@ int stat(const char *pathname, struct stat *statbuf) {
 
 int lstat(const char *pathname, struct stat *statbuf) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("lstat called: pathname=%s", pathname);
 
@@ -1624,8 +1625,8 @@ int lstat(const char *pathname, struct stat *statbuf) {
 
 int lchown(const char *pathname, uid_t owner, gid_t group) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("lchown called: pathname=%s, owner=%d, group=%d", pathname, owner, group);
 
@@ -1641,8 +1642,8 @@ int lchown(const char *pathname, uid_t owner, gid_t group) {
 
 int chown(const char *pathname, uid_t owner, gid_t group) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("chown called: pathname=%s, owner=%d, group=%d", pathname, owner, group);
 
@@ -1658,8 +1659,8 @@ int chown(const char *pathname, uid_t owner, gid_t group) {
 
 int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("fchmodat called: dirfd=%d, pathname=%s, mode=%o, flags=%d", dirfd, pathname, mode, flags);
 
@@ -1675,8 +1676,8 @@ int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
 
 int symlinkat(const char *target, int newdirfd, const char *linkpathname) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("symlinkat called: target=%s, newdirfd=%d, linkpathname=%s", target, newdirfd, linkpathname);
 
@@ -1694,8 +1695,8 @@ int symlinkat(const char *target, int newdirfd, const char *linkpathname) {
 
 int mkfifo(const char *pathname, mode_t mode) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("mkfifo called: pathname=%s, mode=%o", pathname, mode);
 
@@ -1711,8 +1712,8 @@ int mkfifo(const char *pathname, mode_t mode) {
 
 int mkfifoat(int dirfd, const char *pathname, mode_t mode) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("mkfifoat called: dirfd=%d, pathname=%s, mode=%o", dirfd, pathname, mode);
 
@@ -1728,8 +1729,8 @@ int mkfifoat(int dirfd, const char *pathname, mode_t mode) {
 
 int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("mknodat called: dirfd=%d, pathname=%s, mode=%o, dev=%lu", dirfd, pathname, mode, (unsigned long)dev);
 
@@ -1745,8 +1746,8 @@ int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev) {
 
 int mknod(const char *pathname, mode_t mode, dev_t dev) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("mknod called: pathname=%s, mode=%o, dev=%lu", pathname, mode, (unsigned long)dev);
 
@@ -1762,8 +1763,8 @@ int mknod(const char *pathname, mode_t mode, dev_t dev) {
 
 int statx(int dirfd, const char *restrict pathname, int flags, unsigned int mask, struct statx *restrict statxbuf) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("statx called: dirfd=%d, pathname=%s, flags=%d, mask=%u", dirfd, pathname, flags, mask);
 
@@ -1779,8 +1780,8 @@ int statx(int dirfd, const char *restrict pathname, int flags, unsigned int mask
 
 int creat(const char *pathname, mode_t mode) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("creat called: pathname=%s, mode=%o", pathname, mode);
 
@@ -1797,8 +1798,8 @@ int creat(const char *pathname, mode_t mode) {
 #if defined(__APPLE__)
 int renamex_np(const char *oldpath, const char *newpath, int flags) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("renamex_np called: oldpath=%s, newpath=%s, flags=%d", oldpath, newpath, flags);
 
@@ -1816,8 +1817,8 @@ int renamex_np(const char *oldpath, const char *newpath, int flags) {
 
 int renameatx_np(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags) {
     RINIT;
-    uint64_t op_mask =
-        LDFL_OP_NOOP | LDFL_OP_MAP | LDFL_OP_MEM_OPEN | LDFL_OP_STATIC | LDFL_OP_RO | LDFL_OP_PERM | LDFL_OP_DENY;
+    uint64_t op_mask = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR | LDFL_OP_MEM_OPEN | LDFL_OP_MEM_DATA | LDFL_OP_RO |
+                       LDFL_OP_PERM | LDFL_OP_DENY;
 
     LDFL_LOG_CALL("renameatx_np called: olddirfd=%d, oldpath=%s, newdirfd=%d, newpath=%s, flags=%d", olddirfd, oldpath,
                   newdirfd, newpath, flags);

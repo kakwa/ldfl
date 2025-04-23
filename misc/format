@@ -21,7 +21,7 @@ CLANG_FORMAT_STYLE="{
 find ./ -type f \
     \( -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.hpp" \) \
     ! -path "./CMakeFiles/*" \
-    ! -path "*/ldfl-config.h" \
+    ! -path "*/*config*.h" \
     ! -path "*/examples/*" \
     ! -path "*config*.h" \
     -exec clang-format -style="$CLANG_FORMAT_STYLE" -i {} \;

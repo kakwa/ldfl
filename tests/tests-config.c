@@ -24,10 +24,10 @@ static int teardown(void) {
 // Test cases
 void test_json_to_operation(void) {
     CU_ASSERT_EQUAL(json_to_operation("noop"), LDFL_OP_NOOP);
-    CU_ASSERT_EQUAL(json_to_operation("map"), LDFL_OP_MAP);
-    CU_ASSERT_EQUAL(json_to_operation("exec_map"), LDFL_OP_EXEC_MAP);
+    CU_ASSERT_EQUAL(json_to_operation("map"), LDFL_OP_PATH_REDIR);
+    CU_ASSERT_EQUAL(json_to_operation("exec_map"), LDFL_OP_EXEC_REDIR);
     CU_ASSERT_EQUAL(json_to_operation("mem_open"), LDFL_OP_MEM_OPEN);
-    CU_ASSERT_EQUAL(json_to_operation("static"), LDFL_OP_STATIC);
+    CU_ASSERT_EQUAL(json_to_operation("static"), LDFL_OP_MEM_DATA);
     CU_ASSERT_EQUAL(json_to_operation("perm"), LDFL_OP_PERM);
     CU_ASSERT_EQUAL(json_to_operation("deny"), LDFL_OP_DENY);
     CU_ASSERT_EQUAL(json_to_operation("ro"), LDFL_OP_RO);
@@ -107,7 +107,7 @@ void test_parse_valid_config(void) {
     CU_ASSERT_PTR_NOT_NULL(ldfl_mapping);
     CU_ASSERT_STRING_EQUAL(ldfl_mapping[0].name, "test_mapping");
     CU_ASSERT_STRING_EQUAL(ldfl_mapping[0].search_pattern, "test.*");
-    CU_ASSERT_EQUAL(ldfl_mapping[0].operation, LDFL_OP_MAP);
+    CU_ASSERT_EQUAL(ldfl_mapping[0].operation, LDFL_OP_PATH_REDIR);
     CU_ASSERT_STRING_EQUAL(ldfl_mapping[0].target, "/test/target");
     CU_ASSERT_EQUAL(ldfl_mapping[0].path_transform, LDFL_PATH_ABS);
 

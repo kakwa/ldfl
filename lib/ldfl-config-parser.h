@@ -5,10 +5,8 @@
 
 // Default  Mapping
 ldfl_mapping_t default_default[] = {
-    /* name                   search_pattern          operation         target                path_transform,
-       extra_options         */
-    {"default noop rule", ".*", LDFL_OP_NOOP, NULL, LDFL_PATH_ABS, NULL},
-    {NULL, NULL, LDFL_OP_END, NULL, LDFL_PATH_ABS, NULL} // keep this last value
+    {"default noop rule", ".*", LDFL_OP_NOOP, NULL, LDFL_PATH_ABS, false, NULL},
+    {NULL, NULL, LDFL_OP_END, NULL, LDFL_PATH_ABS, NULL, NULL} // keep this last value
 };
 
 ldfl_mapping_t *ldfl_mapping = default_default;
@@ -23,14 +21,14 @@ ldfl_setting_t ldfl_setting = {
 static ldfl_operation_t json_to_operation(const char *op_str) {
     if (strcmp(op_str, "noop") == 0)
         return LDFL_OP_NOOP;
-    if (strcmp(op_str, "map") == 0)
-        return LDFL_OP_MAP;
-    if (strcmp(op_str, "exec_map") == 0)
-        return LDFL_OP_EXEC_MAP;
+    if (strcmp(op_str, "path_redir") == 0)
+        return LDFL_OP_PATH_REDIR;
+    if (strcmp(op_str, "exec_redir") == 0)
+        return LDFL_OP_EXEC_REDIR;
     if (strcmp(op_str, "mem_open") == 0)
         return LDFL_OP_MEM_OPEN;
-    if (strcmp(op_str, "static") == 0)
-        return LDFL_OP_STATIC;
+    if (strcmp(op_str, "mem_data") == 0)
+        return LDFL_OP_MEM_DATA;
     if (strcmp(op_str, "perm") == 0)
         return LDFL_OP_PERM;
     if (strcmp(op_str, "deny") == 0)

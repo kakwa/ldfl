@@ -1,9 +1,9 @@
 ldfl_mapping_t ldfl_mapping[] = {
-    {"rule1", "test(.)", LDFL_OP_MAP, "test1_rule", LDFL_PATH_ABS, NULL},
-    {"rule2", "test(1)", LDFL_OP_NOOP, "test2_rule", LDFL_PATH_ABS, NULL},
-    {"rule3", "test([0-9])", LDFL_OP_RO, "test3_rule", LDFL_PATH_ABS, NULL},
-    {"rule4", "tes.(.)", LDFL_OP_MAP, "test4_rule", LDFL_PATH_ABS, NULL},
-    {NULL, NULL, LDFL_OP_END, NULL, LDFL_PATH_ABS, NULL},
+    {"rule1", "test(.)",     LDFL_OP_PATH_REDIR, "test1_rule", LDFL_PATH_ABS, false, NULL},
+    {"rule2", "test(1)",     LDFL_OP_NOOP,       "test2_rule", LDFL_PATH_ABS, false, NULL},
+    {"rule3", "test([0-9])", LDFL_OP_RO,         "test3_rule", LDFL_PATH_ABS, false, NULL},
+    {"rule4", "tes.(.)",     LDFL_OP_PATH_REDIR, "test4_rule", LDFL_PATH_ABS, false, NULL},
+    {NULL, NULL,             LDFL_OP_END,        NULL,         LDFL_PATH_ABS, false, NULL},
 };
 
 ldfl_setting_t ldfl_setting = {
