@@ -64,7 +64,7 @@ void test_json_to_log_mask(void) {
     json_array_append_new(mask_array, json_string("fn_call"));
 
     uint64_t mask = json_to_log_mask(mask_array);
-    CU_ASSERT(mask & LDFL_LOG_MAPPING_RULE_FOUND);
+    CU_ASSERT(mask & LDFL_LOG_RULE_FOUND);
     CU_ASSERT(mask & LDFL_LOG_FN_CALL);
     CU_ASSERT_FALSE(mask & LDFL_LOG_INIT);
 
@@ -98,7 +98,7 @@ void test_parse_valid_config(void) {
     CU_ASSERT_EQUAL(result, 0);
 
     // Verify settings
-    CU_ASSERT(ldfl_setting.log_mask & LDFL_LOG_MAPPING_RULE_FOUND);
+    CU_ASSERT(ldfl_setting.log_mask & LDFL_LOG_RULE_FOUND);
     CU_ASSERT(ldfl_setting.log_mask & LDFL_LOG_FN_CALL);
     CU_ASSERT_EQUAL(ldfl_setting.log_level, LOG_DEBUG);
     CU_ASSERT_EQUAL(ldfl_setting.logger, ldfl_stderr_logger);
