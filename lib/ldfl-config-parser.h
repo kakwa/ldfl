@@ -83,16 +83,20 @@ static uint64_t json_to_log_mask(json_t *log_mask_array) {
 
     json_array_foreach(log_mask_array, index, value) {
         const char *mask_str = json_string_value(value);
-        if (strcmp(mask_str, "mapping_rule_found") == 0)
-            mask |= LDFL_LOG_MAPPING_RULE_FOUND;
+        if (strcmp(mask_str, "rule_search") == 0)
+            mask |= LDFL_LOG_RULE_SEARCH;
+        if (strcmp(mask_str, "rule_apply") == 0)
+            mask |= LDFL_LOG_RULE_APPLY;
+        if (strcmp(mask_str, "rule_found") == 0)
+            mask |= LDFL_LOG_RULE_FOUND;
         if (strcmp(mask_str, "fn_call") == 0)
             mask |= LDFL_LOG_FN_CALL;
         if (strcmp(mask_str, "init") == 0)
             mask |= LDFL_LOG_INIT;
-        if (strcmp(mask_str, "mapping_rule_apply") == 0)
-            mask |= LDFL_LOG_MAPPING_RULE_APPLY;
         if (strcmp(mask_str, "fn_call_err") == 0)
             mask |= LDFL_LOG_FN_CALL_ERR;
+        if (strcmp(mask_str, "all") == 0)
+            mask |= LDFL_LOG_ALL;
     }
     return mask;
 }

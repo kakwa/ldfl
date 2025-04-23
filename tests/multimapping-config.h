@@ -7,8 +7,8 @@ ldfl_mapping_t ldfl_mapping[] = {
 };
 
 ldfl_setting_t ldfl_setting = {
-    .log_mask = LDFL_LOG_MAPPING_RULE_FOUND | LDFL_LOG_FN_CALL | LDFL_LOG_INIT | LDFL_LOG_MAPPING_RULE_APPLY |
-                LDFL_LOG_FN_CALL_ERR | LDFL_LOG_MAPPING_RULE_SEARCH,
+    .log_mask = LDFL_LOG_RULE_FOUND | LDFL_LOG_FN_CALL | LDFL_LOG_INIT | LDFL_LOG_RULE_APPLY |
+                LDFL_LOG_FN_CALL_ERR | LDFL_LOG_RULE_SEARCH,
     .log_level = LOG_DEBUG,
     .logger    = ldfl_stderr_logger,
 };
