@@ -75,9 +75,9 @@ typedef enum {
     LDFL_OP_NOOP       = 1ULL << 0, /**< No operation. */
     LDFL_OP_PATH_REDIR = 1ULL << 1, /**< Map operation. */
     LDFL_OP_EXEC_REDIR = 1ULL << 2, /**< Executable map. */
-    LDFL_OP_MEM_OPEN   = 1ULL << 3, /**< Memory open. */
-    LDFL_OP_MEM_DATA   = 1ULL << 4, /**< Static file operation. */
-    LDFL_OP_PERM       = 1ULL << 5, /**< Change permissions/ownership, use extra_option "user|group|0600|0700" */
+    LDFL_OP_MEM_OPEN   = 1ULL << 3, /**< Memory open (empty). */
+    LDFL_OP_MEM_DATA   = 1ULL << 4, /**< Memory open (with Content). */
+    LDFL_OP_PERM       = 1ULL << 5, /**< Change permissions/ownership, uses extra_option "user|group|0600|0700". */
     LDFL_OP_DENY       = 1ULL << 6, /**< Deny access. */
     LDFL_OP_RO         = 1ULL << 7, /**< Restrict to Read Only access. */
     LDFL_OP_END        = 0ULL       /**< End marker. */
