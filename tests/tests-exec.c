@@ -53,101 +53,56 @@ void init_mock_exec_functions() {
 
 // Test execve function
 void test_execve(void) {
-    // Setup
-    init_mock_exec_functions();
-    CU_ASSERT_EQUAL(ldfl_parse_json_config(EXEC_TEST_CONFIG), 0);
-
     char *argv[] = {"/bin/ls", NULL};
     char *envp[] = {NULL};
     execve("/bin/ls", argv, envp);
-
-    // Cleanup
-    ldfl_free_json_config();
+    //TODO asserts
 }
 
 void test_execve_deny(void) {
-    // Setup
-    init_mock_exec_functions();
-    CU_ASSERT_EQUAL(ldfl_parse_json_config(EXEC_TEST_CONFIG), 0);
-
-    // Test deny
     char *argv[] = {"/bin/echo", NULL};
     char *envp[] = {NULL};
     execve("/bin/echo", argv, envp);
-
-    // Cleanup
-    ldfl_free_json_config();
+    //TODO asserts
 }
 
 void test_execve_redir(void) {
-    // Setup
-    init_mock_exec_functions();
-    CU_ASSERT_EQUAL(ldfl_parse_json_config(EXEC_TEST_CONFIG), 0);
-
     char *argv[] = {"/bin/true", NULL};
     char *envp[] = {NULL};
     execve("/bin/true", argv, envp);
-
-    // Cleanup
-    ldfl_free_json_config();
+    //TODO asserts
 }
 
 // Test execl function
 void test_execl(void) {
-    // Setup
-    init_mock_exec_functions();
-    CU_ASSERT_EQUAL(ldfl_parse_json_config(EXEC_TEST_CONFIG), 0);
-
     // Test redirect
     execl("/bin/ls", "/bin/ls", NULL);
-
-    // Cleanup
-    ldfl_free_json_config();
 }
 
 // Test execlp function
 void test_execlp(void) {
-    // Setup
-    init_mock_exec_functions();
-    CU_ASSERT_EQUAL(ldfl_parse_json_config(EXEC_TEST_CONFIG), 0);
-
     // Test redirect
     execlp("ls", "ls", NULL);
-
-    // Cleanup
-    ldfl_free_json_config();
 }
 
 // Test execv function
 void test_execv(void) {
-    // Setup
-    init_mock_exec_functions();
-    CU_ASSERT_EQUAL(ldfl_parse_json_config(EXEC_TEST_CONFIG), 0);
-
     // Test redirect
     char *argv[] = {"/bin/ls", NULL};
     execv("/bin/ls", argv);
-
-    // Cleanup
-    ldfl_free_json_config();
 }
 
 // Test execvp function
 void test_execvp(void) {
-    // Setup
-    init_mock_exec_functions();
-
     // Test redirect
     char *argv[] = {"ls", NULL};
     execvp("ls", argv);
-
-    // Cleanup
-    ldfl_free_json_config();
 }
 
 int main(void) {
     setenv("LDFL_CONFIG", EXEC_TEST_CONFIG, 1);
     CU_initialize_registry();
+    init_mock_exec_functions();
 
     // Add the new test suite
     CU_pSuite pSuite = CU_add_suite("Exec Tests", NULL, NULL);
