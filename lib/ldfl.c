@@ -111,13 +111,13 @@ const uint64_t LDFL_OP_COMPAT_TABLE[] = {
  */
 
 /**
- * @struct ldfl_mapping_t
+ * @struct ldfl_rule_t
  * @brief Represents matching + operation rule.
  *
  * This structure defines a rule, including the name, matching pattern,
  * operation type, target resource, and additional options.
  *
- * @note The array of `ldfl_mapping_t` structures should be terminated with an entry
+ * @note The array of `ldfl_rule_t` structures should be terminated with an entry
  * where `name` is `NULL` and `operation` is `LDFL_OP_END`. This sentinel entry is used
  * to mark the end of the array.
  *
@@ -130,7 +130,7 @@ typedef struct {
     ldfl_path_type_t path_transform; /**< Use the unaltered or transform to absolute path in the matching*/
     bool             final;          /**< Stop searching for other rules if true. Continue if false */
     const char      *extra_options;  /**< Extra options. */
-} ldfl_mapping_t;
+} ldfl_rule_t;
 
 /**
  * @brief Variadic logger function type.
@@ -210,9 +210,9 @@ const char *ldfl_log_category_to_string(ldfl_log_category_t category) {
 
 // Wrapper struct to store compiled regex
 typedef struct {
-    const ldfl_mapping_t *mapping;        // Pointer to the original mapping
-    pcre2_code           *matching_regex; // Compiled matching regex
-} compiled_mapping_t;
+    const ldfl_rule_t *rule;           // Pointer to the original rule
+    pcre2_code        *matching_regex; // Compiled matching regex
+} compiled_rule_t;
 
 uint64_t              ldfl_rule_count;
 extern ldfl_setting_t ldfl_setting;
@@ -324,7 +324,7 @@ char *ldfl_render_nullable_array(char *const list[]) {
 }
 
 // Global var for compiled regexp
-compiled_mapping_t *ldfl_compiled_rules;
+compiled_rule_t *ldfl_compiled_rules;
 
 // If static configuration
 #ifdef LDFL_CONFIG
@@ -415,7 +415,7 @@ compiled_mapping_t *ldfl_compiled_rules;
 // Count the number of rules
 uint64_t ldfl_get_rule_count() {
     uint64_t i = 0;
-    while (ldfl_mapping[i].operation != LDFL_OP_END)
+    while (ldfl_rule[i].operation != LDFL_OP_END)
         i++;
     return i;
 }
@@ -424,14 +424,14 @@ uint64_t ldfl_get_rule_count() {
 void ldfl_regex_init() {
     ldfl_rule_count = ldfl_get_rule_count();
 
-    ldfl_compiled_rules = calloc(sizeof(compiled_mapping_t), ldfl_rule_count);
+    ldfl_compiled_rules = calloc(sizeof(compiled_rule_t), ldfl_rule_count);
     for (int i = 0; i < ldfl_rule_count; i++) {
-        ldfl_compiled_rules[i].mapping = &ldfl_mapping[i];
-        if (ldfl_mapping[i].search_pattern == NULL) {
+        ldfl_compiled_rules[i].rule = &ldfl_rule[i];
+        if (ldfl_rule[i].search_pattern == NULL) {
             continue;
         }
         pcre2_code *re;
-        PCRE2_SPTR  pattern_ptr = (PCRE2_SPTR)ldfl_mapping[i].search_pattern;
+        PCRE2_SPTR  pattern_ptr = (PCRE2_SPTR)ldfl_rule[i].search_pattern;
 
         // Error handling variables
         int        errornumber;
@@ -443,7 +443,7 @@ void ldfl_regex_init() {
             PCRE2_UCHAR buffer[256];
             pcre2_get_error_message(errornumber, buffer, sizeof(buffer));
             ldfl_setting.logger(LDFL_LOG_INIT, LOG_CRIT, "rule[%s], PCRE2 compilation failed at offset %d: %s\n",
-                                ldfl_mapping[i].name, (int)erroroffset, buffer);
+                                ldfl_rule[i].name, (int)erroroffset, buffer);
             assert(re);
         }
 
@@ -461,23 +461,22 @@ void ldfl_regex_free() {
 }
 
 // search the rules which could apply for a given path
-bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t op_mask,
-                              compiled_mapping_t ***return_rules, int *num_rules,
-                              pcre2_match_data ***return_pcre_match) {
+bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t op_mask, compiled_rule_t ***return_rules,
+                              int *num_rules, pcre2_match_data ***return_pcre_match) {
     if (pathname == NULL) {
         return false;
     }
 
     // max 64 bits tracked
-    compiled_mapping_t *latest_rules[64] = {0};
-    pcre2_match_data   *latest_match[64] = {0};
-    int                 count            = 0;
+    compiled_rule_t  *latest_rules[64] = {0};
+    pcre2_match_data *latest_match[64] = {0};
+    int               count            = 0;
 
     uint64_t mask = op_mask;
 
     for (int i = 0; i < ldfl_rule_count; i++) {
-        compiled_mapping_t *rule      = &ldfl_compiled_rules[i];
-        uint64_t            operation = rule->mapping->operation;
+        compiled_rule_t *rule      = &ldfl_compiled_rules[i];
+        uint64_t         operation = rule->rule->operation;
 
         int index = ldfl_op_index(operation);
         if (latest_match[index]) {
@@ -485,9 +484,8 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t o
                                 "rule[name: '%s', operation: '%s']' previous identical operation rule[name: '%s', "
                                 "operation: '%s'] already matched "
                                 "for call[fn: '%s', path: '%s']",
-                                ldfl_mapping[i].name, ldfl_operation_to_string(operation),
-                                latest_rules[index]->mapping->name,
-                                ldfl_operation_to_string(latest_rules[index]->mapping->operation), call, pathname);
+                                ldfl_rule[i].name, ldfl_operation_to_string(operation), latest_rules[index]->rule->name,
+                                ldfl_operation_to_string(latest_rules[index]->rule->operation), call, pathname);
             continue;
         }
 
@@ -496,7 +494,7 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t o
             ldfl_setting.logger(
                 LDFL_LOG_RULE_SEARCH, LOG_DEBUG,
                 "rule[name: '%s', operation: '%s']', irrelevant operation for call[fn: '%s', path: '%s']",
-                ldfl_mapping[i].name, ldfl_operation_to_string(operation), call, pathname);
+                ldfl_rule[i].name, ldfl_operation_to_string(operation), call, pathname);
             continue;
         }
 
@@ -507,7 +505,7 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t o
         if (rc <= 0) {
             ldfl_setting.logger(LDFL_LOG_RULE_SEARCH, LOG_DEBUG,
                                 "rule[name: '%s', operation: '%s']' not matching call[fn: '%s', path: '%s']",
-                                ldfl_mapping[i].name, ldfl_operation_to_string(operation), call, pathname);
+                                ldfl_rule[i].name, ldfl_operation_to_string(operation), call, pathname);
             pcre2_match_data_free(match_data);
             continue;
         }
@@ -521,16 +519,16 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t o
 
         ldfl_setting.logger(LDFL_LOG_RULE_FOUND, LOG_INFO,
                             "rule[name: '%s', operation: '%s']' selected for call[fn: '%s', path: '%s']",
-                            ldfl_mapping[i].name, ldfl_operation_to_string(operation), call, pathname);
+                            ldfl_rule[i].name, ldfl_operation_to_string(operation), call, pathname);
 
         // If the operation is "final" or if the mask doesn't allow any meaningfull operation
         // Stop
-        if (rule->mapping->final || mask == LDFL_OP_NOOP || mask == LDFL_OP_END) {
+        if (rule->rule->final || mask == LDFL_OP_NOOP || mask == LDFL_OP_END) {
             break;
         }
     }
 
-    *return_rules      = calloc(sizeof(compiled_mapping_t *), count);
+    *return_rules      = calloc(sizeof(compiled_rule_t *), count);
     *return_pcre_match = calloc(sizeof(pcre2_match_data *), count);
 
     // Format the results
@@ -634,8 +632,8 @@ static char *ldfl_substitute_path(pcre2_code *regex, pcre2_match_data *match_dat
 }
 
 // Apply the matching operations
-void ldfl_apply_rules(compiled_mapping_t **mapping_rules, int num_rules, pcre2_match_data **match_group,
-                      const char *pathname_in, char **pathname_out) {
+void ldfl_apply_rules(compiled_rule_t **rules, int num_rules, pcre2_match_data **match_group, const char *pathname_in,
+                      char **pathname_out) {
     if (pathname_in == NULL) {
         *pathname_out = calloc(sizeof(char), 1);
         return;
@@ -650,18 +648,18 @@ void ldfl_apply_rules(compiled_mapping_t **mapping_rules, int num_rules, pcre2_m
     }
     char *new_pathname;
     for (int i = 0; i < num_rules; i++) {
-        switch (mapping_rules[i]->mapping->operation) {
+        switch (rules[i]->rule->operation) {
         case LDFL_OP_NOOP:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
             break;
         case LDFL_OP_PATH_REDIR:
-            new_pathname = ldfl_substitute_path(mapping_rules[i]->matching_regex, match_group[i], pathname_in,
-                                                mapping_rules[i]->mapping->target);
+            new_pathname =
+                ldfl_substitute_path(rules[i]->matching_regex, match_group[i], pathname_in, rules[i]->rule->target);
             if (!new_pathname) {
                 ldfl_setting.logger(LDFL_LOG_RULE_APPLY, LOG_WARNING,
-                                    "Replacement in path failed for rule '%s' on path '%s'",
-                                    mapping_rules[i]->mapping->name, pathname_in);
+                                    "Replacement in path failed for rule '%s' on path '%s'", rules[i]->rule->name,
+                                    pathname_in);
                 *pathname_out = NULL;
                 return;
             }
@@ -669,15 +667,15 @@ void ldfl_apply_rules(compiled_mapping_t **mapping_rules, int num_rules, pcre2_m
 
             ldfl_setting.logger(LDFL_LOG_RULE_APPLY, LOG_DEBUG,
                                 "LDFL_OP_PATH_REDIR Rule [%s] applied, path '%s' rewritten to '%s'",
-                                mapping_rules[i]->mapping->name, pathname_in, *pathname_out);
+                                rules[i]->rule->name, pathname_in, *pathname_out);
             break;
         case LDFL_OP_EXEC_REDIR:
-            new_pathname = ldfl_substitute_path(mapping_rules[i]->matching_regex, match_group[i], pathname_in,
-                                                mapping_rules[i]->mapping->target);
+            new_pathname =
+                ldfl_substitute_path(rules[i]->matching_regex, match_group[i], pathname_in, rules[i]->rule->target);
             if (!new_pathname) {
                 ldfl_setting.logger(LDFL_LOG_RULE_APPLY, LOG_WARNING,
                                     "Replacement in executable path failed for rule '%s' on path '%s'",
-                                    mapping_rules[i]->mapping->name, pathname_in);
+                                    rules[i]->rule->name, pathname_in);
                 *pathname_out = NULL;
                 return;
             }
@@ -685,7 +683,7 @@ void ldfl_apply_rules(compiled_mapping_t **mapping_rules, int num_rules, pcre2_m
 
             ldfl_setting.logger(LDFL_LOG_RULE_APPLY, LOG_DEBUG,
                                 "LDFL_OP_EXEC_REDIR Rule [%s] applied, executable path '%s' rewritten to '%s'",
-                                mapping_rules[i]->mapping->name, pathname_in, *pathname_out);
+                                rules[i]->rule->name, pathname_in, *pathname_out);
             break;
         case LDFL_OP_MEM_OPEN:
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
@@ -711,7 +709,7 @@ void ldfl_apply_rules(compiled_mapping_t **mapping_rules, int num_rules, pcre2_m
             *pathname_out = calloc(sizeof(char), strlen(pathname_in) + 1);
             stpcpy(*pathname_out, pathname_in);
             ldfl_setting.logger(LDFL_LOG_RULE_APPLY, LOG_WARNING, "Unknown operation %d not yet handle",
-                                mapping_rules[i]->mapping->operation);
+                                rules[i]->rule->operation);
             return; // FIXME (don't only apply the first rule)
         }
     }
@@ -882,7 +880,7 @@ static void __attribute__((constructor(101))) ldfl_init() {
         ldfl_setting.logger(LDFL_LOG_INIT, LOG_WARNING, "Failed to load JSON config '%s'", config_path);
     ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ldfl init called");
     ldfl_regex_init();
-    if (ldfl_mapping != default_default)
+    if (ldfl_rule != default_default)
         ldfl_initialized = true;
 #else
     ldfl_setting.logger(LDFL_LOG_INIT, LOG_DEBUG, "ldfl init called");
@@ -902,10 +900,10 @@ static void __attribute__((constructor(101))) ldfl_init() {
 #define LDFL_LOG_CALL(...) ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_DEBUG, ##__VA_ARGS__)
 
 char *apply_rules_and_cleanup(char *func_name, const char *pathname, uint64_t op_mask) {
-    char                *reworked_path     = NULL;
-    compiled_mapping_t **return_rules      = NULL;
-    pcre2_match_data   **return_pcre_match = NULL;
-    int                  num_rules         = 0;
+    char              *reworked_path     = NULL;
+    compiled_rule_t  **return_rules      = NULL;
+    pcre2_match_data **return_pcre_match = NULL;
+    int                num_rules         = 0;
     ldfl_find_matching_rules(func_name, pathname, op_mask, &return_rules, &num_rules, &return_pcre_match);
     ldfl_apply_rules(return_rules, num_rules, return_pcre_match, pathname, &reworked_path);
     for (int i = 0; i < num_rules; i++) {

@@ -1,6 +1,6 @@
 static const unsigned char ldf_default_blob[] = "hello from ldfl";
 
-ldfl_mapping_t ldfl_mapping[] = {
+ldfl_rule_t ldfl_rule[] = {
     /* name                     search pattern           operation            target                input path mode  final rule  extra options           */
     {  "files redirect",        ".*/temp/([^/]*)$",      LDFL_OP_PATH_REDIR,  "/tmp/$1",            LDFL_PATH_ABS,   true,       NULL                     },
     {  "executable redirect",   ".*/.bin/\\([^/]*\\)$",  LDFL_OP_EXEC_REDIR,  "/opt/ldfl/bin/\\1",  LDFL_PATH_ABS,   true,       NULL                     },

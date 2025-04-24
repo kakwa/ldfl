@@ -105,7 +105,7 @@ This will install:
 
 ### Wrapper Usage
 
-1. Create a configuration file (e.g., `config.json`) with your mapping rules:
+1. Create a configuration file (e.g., `config.json`) with your rule rules:
 ```bash
 ldfl-cli -c config.json -- your-application [args...]
 ```
@@ -134,7 +134,7 @@ LD_PRELOAD=/path/to/libldfl.so your-application [args...]
 
 ## JSON Configuration
 
-The configuration file is a JSON file with two main sections: `settings` and `mappings`.
+The configuration file is a JSON file with two main sections: `settings` and `rules`.
 
 ### Settings
 
@@ -144,11 +144,11 @@ The `settings` section controls the logging behavior:
 {
   "settings": {
     "log_mask": [
-      "mapping_rule_found",
+      "rule_found",
       "fn_call",
       "init",
-      "mapping_rule_apply",
-      "mapping_rule_search",
+      "rule_apply",
+      "rule_search",
       "fn_call_err"
     ],
     "log_level": "warning",
@@ -158,11 +158,11 @@ The `settings` section controls the logging behavior:
 ```
 
 Available log masks:
-- `mapping_rule_found`: Log when a mapping rule is found
+- `rule_found`: Log when a rule rule is found
 - `fn_call`: Log LibC function calls
 - `init`: Log initialization operations
-- `mapping_rule_apply`: Log when a mapping rule is applied
-- `mapping_rule_search`: Log mapping search operations
+- `rule_apply`: Log when a rule rule is applied
+- `rule_search`: Log rule search operations
 - `fn_call_err`: Log LibC function call errors
 
 Log levels:
@@ -178,11 +178,11 @@ Loggers:
 
 ### Mappings
 
-The `mappings` section defines the file path remapping rules. Each mapping has the following properties:
+The `rules` section defines the file path rerule rules. Each rule has the following properties:
 
 ```json
 {
-  "mappings": [
+  "rules": [
     {
       "name": "descriptive name",
       "search_pattern": "regex pattern",
@@ -292,7 +292,7 @@ Create a header file (e.g., `ldfl-config.h`) with your configuration:
 ```c
 static const unsigned char ldf_default_blob[] = "hello from ldfl";
 
-ldfl_mapping_t ldfl_mapping[] = {
+ldfl_rule_t ldfl_rule[] = {
     /* name                   search_pattern          operation         target                path_transform, extra_options         */
     { "temp files redirect",  ".*/temp/([^/]*)$",     LDFL_OP_MAP,      "/tmp/$1",            LDFL_PATH_ABS,  NULL                   },
     { "inc redirect",         "(.*)/inc/(.*)",        LDFL_OP_MAP,      "$1/lib/$2",          LDFL_PATH_ABS,  NULL                   },

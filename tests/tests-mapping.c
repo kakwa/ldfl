@@ -3,7 +3,7 @@
 #define _GNU_SOURCE
 #define _XOPEN_SOURCE 500
 #define _STAT_VER 3
-#define LDFL_CONFIG "test-config.h"
+#define LDFL_CONFIG "basic-config.h"
 
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>

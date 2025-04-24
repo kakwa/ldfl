@@ -1,7 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #define _XOPEN_SOURCE 700
 #define LDLF_UTILS_TESTING
-#define LDFL_CONFIG "test-config.h"
+#define LDFL_CONFIG "basic-config.h"
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 #include <stdio.h>

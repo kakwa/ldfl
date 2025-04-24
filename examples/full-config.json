@@ -1,17 +1,17 @@
 {
   "settings": {
     "log_mask": [
-      "mapping_rule_found",
+      "rule_found",
       "fn_call",
       "init",
-      "mapping_rule_apply",
-      "mapping_rule_search",
+      "rule_apply",
+      "rule_search",
       "fn_call_err"
     ],
     "log_level": "warning",
     "logger": "syslog"
   },
-  "mappings": [
+  "rules": [
     {
       "name": "temp files redirect",
       "search_pattern": ".*/temp/([^/]*)$",

@@ -4,12 +4,12 @@
 #include <stdlib.h>
 
 // Default  Mapping
-ldfl_mapping_t default_default[] = {
+ldfl_rule_t default_default[] = {
     {"default noop rule", ".*", LDFL_OP_NOOP, NULL, LDFL_PATH_ABS, false, NULL},
     {NULL, NULL, LDFL_OP_END, NULL, LDFL_PATH_ABS, NULL, NULL} // keep this last value
 };
 
-ldfl_mapping_t *ldfl_mapping = default_default;
+ldfl_rule_t *ldfl_rule = default_default;
 
 ldfl_setting_t ldfl_setting = {
     .log_mask  = LDFL_LOG_INIT,
@@ -129,62 +129,62 @@ int ldfl_parse_json_config(const char *config_file) {
         }
     }
 
-    // Parse mappings
-    json_t *mappings = json_object_get(root, "mappings");
-    if (mappings && json_is_array(mappings)) {
-        size_t mapping_count = json_array_size(mappings);
-        ldfl_mapping         = calloc(mapping_count + 1, sizeof(ldfl_mapping_t)); // +1 for sentinel
+    // Parse rules
+    json_t *rules = json_object_get(root, "rules");
+    if (rules && json_is_array(rules)) {
+        size_t rule_count = json_array_size(rules);
+        ldfl_rule         = calloc(rule_count + 1, sizeof(ldfl_rule_t)); // +1 for sentinel
 
         size_t  index;
-        json_t *mapping;
-        json_array_foreach(mappings, index, mapping) {
-            json_t *name           = json_object_get(mapping, "name");
-            json_t *search_pattern = json_object_get(mapping, "search_pattern");
-            json_t *operation      = json_object_get(mapping, "operation");
-            json_t *target         = json_object_get(mapping, "target");
-            json_t *path_transform = json_object_get(mapping, "path_transform");
-            json_t *extra_options  = json_object_get(mapping, "extra_options");
-            json_t *final          = json_object_get(mapping, "final");
+        json_t *rule;
+        json_array_foreach(rules, index, rule) {
+            json_t *name           = json_object_get(rule, "name");
+            json_t *search_pattern = json_object_get(rule, "search_pattern");
+            json_t *operation      = json_object_get(rule, "operation");
+            json_t *target         = json_object_get(rule, "target");
+            json_t *path_transform = json_object_get(rule, "path_transform");
+            json_t *extra_options  = json_object_get(rule, "extra_options");
+            json_t *final          = json_object_get(rule, "final");
 
             if (name && search_pattern && operation) {
-                ldfl_mapping[index].name           = strdup(json_string_value(name));
-                ldfl_mapping[index].search_pattern = strdup(json_string_value(search_pattern));
-                ldfl_mapping[index].operation      = json_to_operation(json_string_value(operation));
+                ldfl_rule[index].name           = strdup(json_string_value(name));
+                ldfl_rule[index].search_pattern = strdup(json_string_value(search_pattern));
+                ldfl_rule[index].operation      = json_to_operation(json_string_value(operation));
 
                 if (target && !json_is_null(target)) {
-                    ldfl_mapping[index].target = strdup(json_string_value(target));
+                    ldfl_rule[index].target = strdup(json_string_value(target));
                 } else {
-                    ldfl_mapping[index].target = NULL;
+                    ldfl_rule[index].target = NULL;
                 }
 
                 if (path_transform) {
-                    ldfl_mapping[index].path_transform = json_to_path_type(json_string_value(path_transform));
+                    ldfl_rule[index].path_transform = json_to_path_type(json_string_value(path_transform));
                 } else {
-                    ldfl_mapping[index].path_transform = LDFL_PATH_ABS;
+                    ldfl_rule[index].path_transform = LDFL_PATH_ABS;
                 }
 
                 if (extra_options && !json_is_null(extra_options)) {
-                    ldfl_mapping[index].extra_options = strdup(json_string_value(extra_options));
+                    ldfl_rule[index].extra_options = strdup(json_string_value(extra_options));
                 } else {
-                    ldfl_mapping[index].extra_options = NULL;
+                    ldfl_rule[index].extra_options = NULL;
                 }
 
                 if (final && json_is_boolean(final)) {
-                    ldfl_mapping[index].final = json_boolean_value(final);
+                    ldfl_rule[index].final = json_boolean_value(final);
                 } else {
-                    ldfl_mapping[index].final = false; // Default to false if not specified
+                    ldfl_rule[index].final = false; // Default to false if not specified
                 }
             }
         }
 
         // Add sentinel entry
-        ldfl_mapping[mapping_count].name           = NULL;
-        ldfl_mapping[mapping_count].search_pattern = NULL;
-        ldfl_mapping[mapping_count].operation      = LDFL_OP_END;
-        ldfl_mapping[mapping_count].target         = NULL;
-        ldfl_mapping[mapping_count].path_transform = LDFL_PATH_ABS;
-        ldfl_mapping[mapping_count].extra_options  = NULL;
-        ldfl_mapping[mapping_count].final          = false;
+        ldfl_rule[rule_count].name           = NULL;
+        ldfl_rule[rule_count].search_pattern = NULL;
+        ldfl_rule[rule_count].operation      = LDFL_OP_END;
+        ldfl_rule[rule_count].target         = NULL;
+        ldfl_rule[rule_count].path_transform = LDFL_PATH_ABS;
+        ldfl_rule[rule_count].extra_options  = NULL;
+        ldfl_rule[rule_count].final          = false;
     }
 
     json_decref(root);
@@ -193,15 +193,15 @@ int ldfl_parse_json_config(const char *config_file) {
 
 // Free allocated memory from JSON config
 void ldfl_free_json_config(void) {
-    if (ldfl_mapping && ldfl_mapping != default_default) {
-        for (int i = 0; ldfl_mapping[i].operation != LDFL_OP_END; i++) {
-            free((void *)ldfl_mapping[i].name);
-            free((void *)ldfl_mapping[i].search_pattern);
-            free((void *)ldfl_mapping[i].target);
-            free((void *)ldfl_mapping[i].extra_options);
+    if (ldfl_rule && ldfl_rule != default_default) {
+        for (int i = 0; ldfl_rule[i].operation != LDFL_OP_END; i++) {
+            free((void *)ldfl_rule[i].name);
+            free((void *)ldfl_rule[i].search_pattern);
+            free((void *)ldfl_rule[i].target);
+            free((void *)ldfl_rule[i].extra_options);
         }
-        free(ldfl_mapping);
-        ldfl_mapping = NULL;
+        free(ldfl_rule);
+        ldfl_rule = NULL;
     }
 }
 /** @endcond */

@@ -60,7 +60,7 @@ void test_json_to_logger(void) {
 
 void test_json_to_log_mask(void) {
     json_t *mask_array = json_array();
-    json_array_append_new(mask_array, json_string("mapping_rule_found"));
+    json_array_append_new(mask_array, json_string("rule_found"));
     json_array_append_new(mask_array, json_string("fn_call"));
 
     uint64_t mask = json_to_log_mask(mask_array);
@@ -74,13 +74,13 @@ void test_json_to_log_mask(void) {
 void test_parse_valid_config(void) {
     const char *test_config = "{\n"
                               "  \"settings\": {\n"
-                              "    \"log_mask\": [\"mapping_rule_found\", \"fn_call\"],\n"
+                              "    \"log_mask\": [\"rule_found\", \"fn_call\"],\n"
                               "    \"log_level\": \"debug\",\n"
                               "    \"logger\": \"stderr\"\n"
                               "  },\n"
-                              "  \"mappings\": [\n"
+                              "  \"rules\": [\n"
                               "    {\n"
-                              "      \"name\": \"test_mapping\",\n"
+                              "      \"name\": \"test_rule\",\n"
                               "      \"search_pattern\": \"test.*\",\n"
                               "      \"operation\": \"map\",\n"
                               "      \"target\": \"/test/target\",\n"
@@ -103,13 +103,13 @@ void test_parse_valid_config(void) {
     CU_ASSERT_EQUAL(ldfl_setting.log_level, LOG_DEBUG);
     CU_ASSERT_EQUAL(ldfl_setting.logger, ldfl_stderr_logger);
 
-    // Verify mappings
-    CU_ASSERT_PTR_NOT_NULL(ldfl_mapping);
-    CU_ASSERT_STRING_EQUAL(ldfl_mapping[0].name, "test_mapping");
-    CU_ASSERT_STRING_EQUAL(ldfl_mapping[0].search_pattern, "test.*");
-    CU_ASSERT_EQUAL(ldfl_mapping[0].operation, LDFL_OP_PATH_REDIR);
-    CU_ASSERT_STRING_EQUAL(ldfl_mapping[0].target, "/test/target");
-    CU_ASSERT_EQUAL(ldfl_mapping[0].path_transform, LDFL_PATH_ABS);
+    // Verify rules
+    CU_ASSERT_PTR_NOT_NULL(ldfl_rule);
+    CU_ASSERT_STRING_EQUAL(ldfl_rule[0].name, "test_rule");
+    CU_ASSERT_STRING_EQUAL(ldfl_rule[0].search_pattern, "test.*");
+    CU_ASSERT_EQUAL(ldfl_rule[0].operation, LDFL_OP_PATH_REDIR);
+    CU_ASSERT_STRING_EQUAL(ldfl_rule[0].target, "/test/target");
+    CU_ASSERT_EQUAL(ldfl_rule[0].path_transform, LDFL_PATH_ABS);
 
     remove("test_config.json");
 }

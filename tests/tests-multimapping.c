@@ -3,7 +3,7 @@
 #define _GNU_SOURCE
 #define _XOPEN_SOURCE 500
 #define _STAT_VER 3
-#define LDFL_CONFIG "multimapping-config.h"
+#define LDFL_CONFIG "multirule-config.h"
 
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
@@ -17,10 +17,10 @@
 
 void test_multi_rule_matching(void) {
     // Test path that should match all rules
-    const char          *test_path      = "test1";
-    compiled_mapping_t **matching_rules = NULL;
-    pcre2_match_data   **match_data     = NULL;
-    int                  num_rules      = 0;
+    const char        *test_path      = "test1";
+    compiled_rule_t  **matching_rules = NULL;
+    pcre2_match_data **match_data     = NULL;
+    int                num_rules      = 0;
 
     // Find matching rules
     bool found = ldfl_find_matching_rules("open", test_path, LDFL_OP_PATH_REDIR | LDFL_OP_NOOP | LDFL_OP_RO,
@@ -30,7 +30,7 @@ void test_multi_rule_matching(void) {
 
     // Verify the rules
     for (int i = 0; i < num_rules; i++) {
-        CU_ASSERT_PTR_NOT_NULL(matching_rules[i]->mapping);
+        CU_ASSERT_PTR_NOT_NULL(matching_rules[i]->rule);
         CU_ASSERT_PTR_NOT_NULL(matching_rules[i]->matching_regex);
     }
 

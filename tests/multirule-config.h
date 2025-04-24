@@ -1,4 +1,4 @@
-ldfl_mapping_t ldfl_mapping[] = {
+ldfl_rule_t ldfl_rule[] = {
     {"rule1", "test(.)",     LDFL_OP_PATH_REDIR, "test1_rule", LDFL_PATH_ABS, false, NULL},
     {"rule2", "test(1)",     LDFL_OP_NOOP,       "test2_rule", LDFL_PATH_ABS, false, NULL},
     {"rule3", "test([0-9])", LDFL_OP_RO,         "test3_rule", LDFL_PATH_ABS, false, NULL},

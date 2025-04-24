@@ -136,7 +136,7 @@ static void test_execvp(void) {
 }
 
 int main(void) {
-    setenv("LDFL_CONFIG", "./tests/exec_test_config.json", 1);
+    setenv("LDFL_CONFIG", "./tests/exec-config.json", 1);
     CU_initialize_registry();
 
     // Add the new test suite

@@ -6,7 +6,7 @@
     "log_level": "debug",
     "logger": "syslog"
   },
-  "mappings": [
+  "rules": [
     {
       "name": "catch all",
       "search_pattern": "^.",

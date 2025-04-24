@@ -36,10 +36,10 @@ const char *argp_program_version = BFD_VERSION;
 
 const char *argp_program_bug_address = "https://github.com/kakwa/ldfl/issues";
 
-static char doc[] = "\nLDFL - libldfl.so LD_PRELOAD wrapper for path remapping";
+static char doc[] = "\nLDFL - libldfl.so LD_PRELOAD wrapper for path rerule";
 
 static struct argp_option options[] = {
-    {"config", 'c', "CONFIG_FILE", 0, "Configuration file for path remapping"},
+    {"config", 'c', "CONFIG_FILE", 0, "Configuration file for path rerule"},
     {"library", 'l', "LIBRARY_PATH", 0, "Path to the ldfl library (default: " DEFAULT_LIB_PATH ")"},
     {"debug", 'd', NULL, 0, "Debug Output"},
     {0}};
