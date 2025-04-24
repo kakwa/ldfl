@@ -354,8 +354,9 @@ compiled_rule_t *ldfl_compiled_rules;
         }                                                                                                              \
         va_end(va_list_name);                                                                                          \
                                                                                                                        \
-        ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_CRIT, "call '%s', variadic arg count too high: %d (limit: 8)",       \
-                            #target_func, _arg_count);                                                                 \
+        if (_arg_count > 8)                                                                                            \
+            ldfl_setting.logger(LDFL_LOG_FN_CALL, LOG_CRIT, "call '%s', variadic arg count too high: %d (limit: 8)",   \
+                                #target_func, _arg_count);                                                             \
         /* Call the target function based on the argument count */                                                     \
         int _ret;                                                                                                      \
         switch (_arg_count) {                                                                                          \
