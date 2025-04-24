@@ -60,9 +60,9 @@ typedef enum {
 typedef enum {
     LDFL_LOG_FN_CALL     = 1ULL << 0, /**< Log LibC function calls. */
     LDFL_LOG_FN_CALL_ERR = 1ULL << 1, /**< Log LibC function calls errors */
-    LDFL_LOG_RULE_SEARCH = 1ULL << 2, /**< Log mapping search operations. */
-    LDFL_LOG_RULE_FOUND  = 1ULL << 3, /**< Log mapping found operations. */
-    LDFL_LOG_RULE_APPLY  = 1ULL << 4, /**< Log mapping application operations. */
+    LDFL_LOG_RULE_SEARCH = 1ULL << 2, /**< Log rule search operations. */
+    LDFL_LOG_RULE_FOUND  = 1ULL << 3, /**< Log rule found operations. */
+    LDFL_LOG_RULE_APPLY  = 1ULL << 4, /**< Log rule application operations. */
     LDFL_LOG_INIT        = 1ULL << 5, /**< Log initialization and deinitialization operations. */
     LDFL_LOG_ALL         = ~0ULL      /**< Log all categories. */
 } ldfl_log_category_t;
@@ -73,26 +73,48 @@ typedef enum {
  */
 typedef enum {
     LDFL_OP_NOOP       = 1ULL << 0, /**< No operation. */
-    LDFL_OP_PATH_REDIR = 1ULL << 1, /**< Map operation. */
-    LDFL_OP_EXEC_REDIR = 1ULL << 2, /**< Executable map. */
+    LDFL_OP_PATH_REDIR = 1ULL << 1, /**< Path redirection. */
+    LDFL_OP_EXEC_REDIR = 1ULL << 2, /**< Path redirection for executable. */
     LDFL_OP_MEM_OPEN   = 1ULL << 3, /**< Memory open (empty). */
     LDFL_OP_MEM_DATA   = 1ULL << 4, /**< Memory open (with Content). */
-    LDFL_OP_PERM       = 1ULL << 5, /**< Change permissions/ownership, uses extra_option "user|group|0600|0700". */
-    LDFL_OP_DENY       = 1ULL << 6, /**< Deny access. */
-    LDFL_OP_RO         = 1ULL << 7, /**< Restrict to Read Only access. */
-    LDFL_OP_END        = 0ULL       /**< End marker. */
+    LDFL_OP_PERM =
+        1ULL << 5, /**< Change permissions/ownership, uses extra_option "<USER>|<GROUP>|<FILE_PERM>|<DIR_PERM>". */
+    LDFL_OP_DENY = 1ULL << 6, /**< Deny access. */
+    LDFL_OP_RO   = 1ULL << 7, /**< Restrict to Read Only access. */
+    LDFL_OP_END  = 0ULL,      /**< End marker. */
+    LDFL_OP_ALL  = ~0ULL      /**< All ops mask */
 } ldfl_operation_t;
+
+#define ldfl_op_index(op) __builtin_ctzll(op)
+
+/**
+ * @brief Compatibility mask table for LDFL operations.
+ *
+ * Indexed by ldfl_op_index(op), this table defines which operations
+ * are valid to combine with each LDFL operation.
+ */
+const uint64_t LDFL_OP_COMPAT_TABLE[] = {
+    [ldfl_op_index(LDFL_OP_NOOP)]       = LDFL_OP_ALL, /**< NOOP is compatible with all ops */
+    [ldfl_op_index(LDFL_OP_PATH_REDIR)] = LDFL_OP_NOOP | LDFL_OP_DENY | LDFL_OP_RO |
+                                          LDFL_OP_PERM, /**< PATH_REDIR can combine with NOOP, DENY, RO, PERM */
+    [ldfl_op_index(LDFL_OP_EXEC_REDIR)] = LDFL_OP_NOOP | LDFL_OP_END,  /**< EXEC_REDIR can combine with NOOP, END */
+    [ldfl_op_index(LDFL_OP_MEM_OPEN)]   = LDFL_OP_NOOP | LDFL_OP_RO,   /**< MEM_OPEN can combine with NOOP, RO */
+    [ldfl_op_index(LDFL_OP_MEM_DATA)]   = LDFL_OP_NOOP | LDFL_OP_RO,   /**< MEM_DATA can combine with NOOP, RO */
+    [ldfl_op_index(LDFL_OP_PERM)] = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR, /**< PERM can combine with NOOP, PATH_REDIR */
+    [ldfl_op_index(LDFL_OP_DENY)] = LDFL_OP_END,                       /**< DENY is final */
+    [ldfl_op_index(LDFL_OP_RO)]   = LDFL_OP_NOOP | LDFL_OP_PATH_REDIR, /**< RO can combine with NOOP, PATH_REDIR */
+};
 
 /**
  * @file
- * @brief Defines the structure for a single mapping entry.
+ * @brief Defines the structure for a single rule entry.
  */
 
 /**
  * @struct ldfl_mapping_t
- * @brief Represents a single file mapping entry.
+ * @brief Represents matching + operation rule.
  *
- * This structure defines a mapping rule, including the name, matching pattern,
+ * This structure defines a rule, including the name, matching pattern,
  * operation type, target resource, and additional options.
  *
  * @note The array of `ldfl_mapping_t` structures should be terminated with an entry
@@ -101,13 +123,13 @@ typedef enum {
  *
  */
 typedef struct {
-    const char      *name;           /**< Name of the mapping rule. Only informational */
-    const char      *search_pattern; /**< Matching regex on file/dir path. set to NULL to chain */
+    const char      *name;           /**< Name of the rule. Only informational */
+    const char      *search_pattern; /**< Matching regex on file/dir path. */
     ldfl_operation_t operation;      /**< Operation type. */
     const void      *target;         /**< Replacement regex for the file/dir path. */
-    ldfl_path_type_t path_transform; /**< Use the unaltered or absolute path in the matching*/
+    ldfl_path_type_t path_transform; /**< Use the unaltered or transform to absolute path in the matching*/
     bool             final;          /**< Stop searching for other rules if true. Continue if false */
-    const char      *extra_options;  /**< Extra options options. */
+    const char      *extra_options;  /**< Extra options. */
 } ldfl_mapping_t;
 
 /**
@@ -140,11 +162,7 @@ typedef struct {
 } ldfl_setting_t;
 
 /** @cond */
-
-// Covert ldfl_operation_t to equivalent index
-static inline int ldfl_op_index(ldfl_operation_t op) {
-    return __builtin_ctzll(op); // count trailing zeros
-}
+// cond to not include the following code in Doxygen until next endcond
 
 const char *ldfl_operation_to_string(ldfl_operation_t op) {
     switch (op) {
@@ -208,6 +226,7 @@ void ldfl_dummy_logger(uint64_t mask, int priority, const char *fmt, ...) {
 void ldfl_stderr_logger(uint64_t mask, int priority, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
+    // Return early if we don't care
     if (priority > ldfl_setting.log_level)
         return;
     if (!(mask & ldfl_setting.log_mask))
@@ -229,6 +248,7 @@ void ldfl_stderr_logger(uint64_t mask, int priority, const char *fmt, ...) {
 
 // Syslog logger function
 void ldfl_syslog_logger(uint64_t mask, int priority, const char *fmt, ...) {
+    // Return early if we don't care
     if (priority > ldfl_setting.log_level)
         return;
     if (!(mask & ldfl_setting.log_mask))
@@ -253,8 +273,10 @@ void ldfl_syslog_logger(uint64_t mask, int priority, const char *fmt, ...) {
 
     // Open the syslog
     openlog(NULL, LOG_PID, LOG_USER);
-    syslog(priority, "%s", log_message); // Log the built message
+    syslog(priority, "%s", log_message);
+    // Close immediately, otherwise it can crash the main program
     closelog();
+
     free(log_message);
 }
 
@@ -315,6 +337,7 @@ compiled_mapping_t *ldfl_compiled_rules;
 #define LDFL_MAX_ARGS 8 // Limit to a maximum of 8 arguments for simplicity
 
 // Generic macro for wrapping variadic calls, limited to 8 arguments and only for NULL terminated list of strings
+// FIXME not a fan TBH...
 #define ldfl_variadic_str_wrap(target_func, nvarg, ...)                                                                \
     ({                                                                                                                 \
         void   *_arg;                                                                                                  \
@@ -437,6 +460,7 @@ void ldfl_regex_free() {
     free(ldfl_compiled_rules);
 }
 
+// search the rules which could apply for a given path
 bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t op_mask,
                               compiled_mapping_t ***return_rules, int *num_rules,
                               pcre2_match_data ***return_pcre_match) {
@@ -448,6 +472,8 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t o
     compiled_mapping_t *latest_rules[64] = {0};
     pcre2_match_data   *latest_match[64] = {0};
     int                 count            = 0;
+
+    uint64_t mask = op_mask;
 
     for (int i = 0; i < ldfl_rule_count; i++) {
         compiled_mapping_t *rule      = &ldfl_compiled_rules[i];
@@ -465,8 +491,8 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t o
             continue;
         }
 
-        // Filter out rules that don't match the op_mask or don't have regex
-        if (!(operation & op_mask) || rule->matching_regex == NULL) {
+        // Filter out rules that don't match the mask or don't have regex
+        if (!(operation & mask) || rule->matching_regex == NULL) {
             ldfl_setting.logger(
                 LDFL_LOG_RULE_SEARCH, LOG_DEBUG,
                 "rule[name: '%s', operation: '%s']', irrelevant operation for call[fn: '%s', path: '%s']",
@@ -477,6 +503,7 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t o
         pcre2_match_data *match_data = pcre2_match_data_create_from_pattern(rule->matching_regex, NULL);
         int rc = pcre2_match(rule->matching_regex, (PCRE2_SPTR)pathname, strlen(pathname), 0, 0, match_data, NULL);
 
+        // not matching
         if (rc <= 0) {
             ldfl_setting.logger(LDFL_LOG_RULE_SEARCH, LOG_DEBUG,
                                 "rule[name: '%s', operation: '%s']' not matching call[fn: '%s', path: '%s']",
@@ -485,12 +512,22 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t o
             continue;
         }
 
+        // Combine the mask with the operation compatibility mask.
+        mask &= LDFL_OP_COMPAT_TABLE[index];
+
         count++;
         latest_rules[index] = rule;
         latest_match[index] = match_data;
+
         ldfl_setting.logger(LDFL_LOG_RULE_FOUND, LOG_INFO,
                             "rule[name: '%s', operation: '%s']' selected for call[fn: '%s', path: '%s']",
                             ldfl_mapping[i].name, ldfl_operation_to_string(operation), call, pathname);
+
+        // If the operation is "final" or if the mask doesn't allow any meaningfull operation
+        // Stop
+        if (rule->mapping->final || mask == LDFL_OP_NOOP || mask == LDFL_OP_END) {
+            break;
+        }
     }
 
     *return_rules      = calloc(sizeof(compiled_mapping_t *), count);
@@ -510,6 +547,7 @@ bool ldfl_find_matching_rules(const char *call, const char *pathname, uint64_t o
     return (count > 0);
 }
 
+// Convert to absolute path
 char *ldfl_fullpath(int dirfd, const char *pathname) {
     char *resolved_path = NULL;
 
@@ -595,6 +633,7 @@ static char *ldfl_substitute_path(pcre2_code *regex, pcre2_match_data *match_dat
     return new_pathname;
 }
 
+// Apply the matching operations
 void ldfl_apply_rules(compiled_mapping_t **mapping_rules, int num_rules, pcre2_match_data **match_group,
                       const char *pathname_in, char **pathname_out) {
     if (pathname_in == NULL) {
