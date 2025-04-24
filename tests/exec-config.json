@@ -1,24 +1,43 @@
 {
-    "settings": {
-      "log_mask": [
-        "rule_found",
-        "fn_call",
-        "init",
-        "rule_apply",
-        "rule_search",
-        "fn_call_err"
-      ],
-      "log_level": "debug",
-      "logger": "stderr"
-    },
-    "rules": [
-        {
-            "name": "exec_test_script",
-            "operation": "exec_map",
-            "search_pattern": ".*/dir",
-            "target": "noneexistantexecthere",
-            "path_transform": "absolute",
-            "extra_options": null
-        }
+  "settings": {
+    "log_level": "debug",
+    "logger": "stderr",
+    "log_mask": [
+      "rule_search",
+      "rule_apply",
+      "rule_found",
+      "fn_call",
+      "init",
+      "fn_call_err"
     ]
+  },
+  "rules": [
+    {
+      "name": "Exec redirect rule",
+      "search_pattern": "/bin/ls",
+      "operation": "exec_redir",
+      "target": "/bin/true",
+      "path_transform": "absolute",
+      "extra_options": null,
+      "final": true
+    },
+    {
+      "name": "Exec deny rule",
+      "search_pattern": "/bin/echo",
+      "operation": "deny",
+      "target": null,
+      "path_transform": "absolute",
+      "extra_options": null,
+      "final": true
+    },
+    {
+      "name": "Exec noop rule",
+      "search_pattern": "/bin/true",
+      "operation": "noop",
+      "target": null,
+      "path_transform": "absolute",
+      "extra_options": null,
+      "final": true
+    }
+  ]
 }
