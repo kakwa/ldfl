@@ -184,12 +184,13 @@ The `rules` section defines the file path rerule rules. Each rule has the follow
 {
   "rules": [
     {
-      "name": "descriptive name",
-      "search_pattern": "regex pattern",
-      "operation": "operation type",
-      "target": "target path or resource",
-      "path_transform": "absolute|original",
-      "extra_options": "operation specific options"
+      "name": "<descriptive/name>",
+      "search_pattern": "<regex pattern>",
+      "operation": "<operation type>",
+      "target": "<target path>",
+      "path_transform": "<absolute|original>",
+      "extra_options": "<operation specific options>",
+      "final": false
     }
   ]
 }
@@ -197,25 +198,27 @@ The `rules` section defines the file path rerule rules. Each rule has the follow
 
 #### Available Operations
 
-1. **File Redirection** (`map`):
+1. **File Redirection** (`path_redir`):
 ```json
 {
   "name": "temp files redirect",
   "search_pattern": ".*/temp/([^/]*)$",
-  "operation": "map",
+  "operation": "path_redir",
   "target": "/tmp/$1",
-  "path_transform": "absolute"
+  "path_transform": "absolute",
+  "final": false
 }
 ```
 
-2. **Executable Redirection** (`exec_map`):
+2. **Executable Redirection** (`exec_redir`):
 ```json
 {
   "name": "executable redirect",
   "search_pattern": ".*/.bin/\\([^/]*\\)$",
-  "operation": "exec_map",
+  "operation": "exec_redir",
   "target": "/opt/ldfl/bin/\\1",
-  "path_transform": "absolute"
+  "path_transform": "absolute",
+  "final": false
 }
 ```
 
@@ -226,18 +229,20 @@ The `rules` section defines the file path rerule rules. Each rule has the follow
   "search_pattern": ".*/file[0-9].txt",
   "operation": "mem_open",
   "target": null,
-  "path_transform": "absolute"
+  "path_transform": "absolute",
+  "final": false
 }
 ```
 
-4. **Static File** (`static`):
+4. **Static File** (`mem_data`):
 ```json
 {
   "name": "static file",
   "search_pattern": ".*/static.bin",
-  "operation": "static",
+  "operation": "mem_data",
   "target": "default_blob",
-  "path_transform": "absolute"
+  "path_transform": "absolute",
+  "final": false
 }
 ```
 
@@ -249,6 +254,7 @@ The `rules` section defines the file path rerule rules. Each rule has the follow
   "operation": "perm",
   "target": null,
   "path_transform": "absolute",
+  "final": false,
   "extra_options": "user:group|dir_mode|file_mode"
 }
 ```
@@ -260,7 +266,9 @@ The `rules` section defines the file path rerule rules. Each rule has the follow
   "name": "allow /dev",
   "search_pattern": "^/dev/.*",
   "operation": "noop",
-  "path_transform": "absolute"
+  "target": null,
+  "path_transform": "absolute",
+  "final": false
 }
 ```
    - **Deny** (`deny`):
@@ -269,7 +277,9 @@ The `rules` section defines the file path rerule rules. Each rule has the follow
   "name": "default & deny",
   "search_pattern": ".*",
   "operation": "deny",
-  "path_transform": "absolute"
+  "target": null,
+  "path_transform": "absolute",
+  "final": false
 }
 ```
 
@@ -279,7 +289,9 @@ The `rules` section defines the file path rerule rules. Each rule has the follow
   "name": "read only files",
   "search_pattern": ".*/readonly/.*",
   "operation": "ro",
-  "path_transform": "absolute"
+  "target": null,
+  "path_transform": "absolute",
+  "final": false
 }
 ```
 
@@ -293,16 +305,16 @@ Create a header file (e.g., `ldfl-config.h`) with your configuration:
 static const unsigned char ldf_default_blob[] = "hello from ldfl";
 
 ldfl_rule_t ldfl_rule[] = {
-    /* name                   search_pattern          operation         target                path_transform, extra_options         */
-    { "temp files redirect",  ".*/temp/([^/]*)$",     LDFL_OP_MAP,      "/tmp/$1",            LDFL_PATH_ABS,  NULL                   },
-    { "inc redirect",         "(.*)/inc/(.*)",        LDFL_OP_MAP,      "$1/lib/$2",          LDFL_PATH_ABS,  NULL                   },
-    { "executable redirect",  ".*/.bin/\\([^/]*\\)$", LDFL_OP_EXEC_MAP, "/opt/ldfl/bin/\\1",  LDFL_PATH_ABS,  NULL                   },
-    { "memory open",          ".*/file[0-9].txt",     LDFL_OP_MEM_OPEN, NULL,                 LDFL_PATH_ABS,  NULL                   },
-    { "static file",          ".*/static.bin",        LDFL_OP_STATIC,   ldf_default_blob,     LDFL_PATH_ABS,  NULL                   },
-    { "change data perm",     ".*/data/.*",           LDFL_OP_PERM,     NULL,                 LDFL_PATH_ABS,  "kakwa:kakwa|0700|0600"},
-    { "allow /dev",           "^/dev/.*",             LDFL_OP_NOOP,     NULL,                 LDFL_PATH_ABS,  NULL                   },
-    { "default & deny",       ".*",                   LDFL_OP_DENY,     NULL,                 LDFL_PATH_ABS,  NULL                   },
-    { NULL,                   NULL,                   LDFL_OP_END,      NULL,                 LDFL_PATH_ABS,  NULL                   }  // keep this last value
+    /* name                   search_pattern          operation         target                path_transform, final, extra_options         */
+    { "temp files redirect",  ".*/temp/([^/]*)$",     LDFL_OP_PATH_REDIR, "/tmp/$1",            LDFL_PATH_ABS, false, NULL                   },
+    { "inc redirect",         "(.*)/inc/(.*)",        LDFL_OP_PATH_REDIR, "$1/lib/$2",          LDFL_PATH_ABS, false, NULL                   },
+    { "executable redirect",  ".*/.bin/\\([^/]*\\)$", LDFL_OP_EXEC_REDIR, "/opt/ldfl/bin/\\1",  LDFL_PATH_ABS, false, NULL                   },
+    { "memory open",          ".*/file[0-9].txt",     LDFL_OP_MEM_OPEN,   NULL,                 LDFL_PATH_ABS, false, NULL                   },
+    { "static file",          ".*/static.bin",        LDFL_OP_MEM_DATA,   ldf_default_blob,     LDFL_PATH_ABS, false, NULL                   },
+    { "change data perm",     ".*/data/.*",           LDFL_OP_PERM,       NULL,                 LDFL_PATH_ABS, false, "kakwa:kakwa|0700|0600"},
+    { "allow /dev",           "^/dev/.*",             LDFL_OP_NOOP,       NULL,                 LDFL_PATH_ABS, false, NULL                   },
+    { "default & deny",       ".*",                   LDFL_OP_DENY,       NULL,                 LDFL_PATH_ABS, false, NULL                   },
+    { NULL,                   NULL,                   LDFL_OP_END,        NULL,                 LDFL_PATH_ABS, false, NULL                   }  // keep this last value
 };
 
 ldfl_setting_t ldfl_setting = {
