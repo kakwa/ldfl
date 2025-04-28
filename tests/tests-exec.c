@@ -56,21 +56,21 @@ void test_execve(void) {
     char *argv[] = {"/bin/ls", NULL};
     char *envp[] = {NULL};
     execve("/bin/ls", argv, envp);
-    //TODO asserts
+    // TODO asserts
 }
 
 void test_execve_deny(void) {
     char *argv[] = {"/bin/echo", NULL};
     char *envp[] = {NULL};
     execve("/bin/echo", argv, envp);
-    //TODO asserts
+    // TODO asserts
 }
 
 void test_execve_redir(void) {
     char *argv[] = {"/bin/true", NULL};
     char *envp[] = {NULL};
     execve("/bin/true", argv, envp);
-    //TODO asserts
+    // TODO asserts
 }
 
 // Test execl function
